@@ -111,7 +111,7 @@ jobs:
           -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
           -f ${{ env.COMPOSEFILE }}
           --env-file ${{ env.ENVFILE }}
-          convert ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          convert
       
       - name: Pre-pull new Docker-image
         env:
@@ -123,7 +123,7 @@ jobs:
           -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
           -f ${{ env.COMPOSEFILE }}
           --env-file ${{ env.ENVFILE }}
-          pull --quiet ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          pull --quiet
       
       - name: Update and start App
         env:
@@ -135,7 +135,7 @@ jobs:
           -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
           -f ${{ env.COMPOSEFILE }}
           --env-file ${{ env.ENVFILE }}
-          up --detach ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          up --detach
   # notify:
   #   runs-on: apifornia-builder
   # deploy-lint:
