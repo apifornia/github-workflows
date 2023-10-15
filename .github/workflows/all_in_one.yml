@@ -1,0 +1,151 @@
+on:
+  workflow_call:
+    inputs:
+      env_vars:
+        type: string
+        default: ''
+        required: false
+
+env:
+  DOCKERFILE: docker/images/dev/Dockerfile
+  COMPOSEFILE: docker/compose/dev/docker-compose.yml
+  ENVFILE: docker/compose/dev/.env
+
+jobs:
+  setup:
+    runs-on: apifornia-builder
+    outputs:
+      CALLER_REPO_NAME: ${{ steps.setup.outputs.CALLER_REPO_NAME }}
+      RUNNER: ${{ steps.setup.outputs.RUNNER }}
+      TAG: ${{ steps.setup.outputs.TAG }}
+      BASE_DOMAIN: ${{ steps.setup.outputs.BASE_DOMAIN }}
+    steps:
+      - id: setup
+        name: Configuration setup
+        run: |
+          split=(${GITHUB_REPOSITORY//\// })
+          echo "CALLER_REPO_NAME=${split[1]}" >> $GITHUB_OUTPUT
+
+          if [ ${GITHUB_REF_TYPE} == 'tag' ]; then
+            if [ ${GITHUB_REF_NAME} == 'dev' ]; then
+              echo "TAG=dev" >> $GITHUB_OUTPUT
+              echo "RUNNER=apifornia-dev" >> $GITHUB_OUTPUT
+              echo "BASE_DOMAIN=dev.apifornia.com" >> $GITHUB_OUTPUT
+            fi
+            if [ ${GITHUB_REF_NAME} == 'prod' ]; then
+              echo "TAG=dev" >> $GITHUB_OUTPUT
+              echo "RUNNER=apifornia-prod" >> $GITHUB_OUTPUT
+              echo "BASE_DOMAIN=apifornia.com" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "TAG=prod" >> $GITHUB_OUTPUT
+            echo "RUNNER=apifornia-prod" >> $GITHUB_OUTPUT
+            echo "BASE_DOMAIN=apifornia.com" >> $GITHUB_OUTPUT
+          fi
+  build:
+    runs-on: apifornia-builder
+    needs: setup
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+      
+      - name: Get Docker metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=${{ github.sha }}
+      
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ${{ env.DOCKERFILE }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+  compose-up:
+    needs: [setup,build]
+    runs-on: ${{ needs.setup.outputs.RUNNER }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+      
+      - name: Get Docker metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=${{ github.sha }}
+      
+      - name: Login to Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate .env file
+        run: |
+          echo "${{ inputs.env_vars }}" > ${{ env.ENVFILE }}
+
+      - name: Lint and show compose manifest
+        env:
+          IMAGE_NAME: ${{ steps.meta.outputs.tags }}
+          CI_PROJECT_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          ENV_VARS: ${{ inputs.env_vars }}
+        run: >
+          /usr/bin/docker compose
+          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          -f ${{ env.COMPOSEFILE }}
+          --env-file ${{ env.ENVFILE }}
+          convert ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+      
+      - name: Pre-pull new Docker-image
+        env:
+          IMAGE_NAME: ${{ steps.meta.outputs.tags }}
+          CI_PROJECT_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          ENV_VARS: ${{ inputs.env_vars }}
+        run: >
+          /usr/bin/docker compose
+          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          -f ${{ env.COMPOSEFILE }}
+          --env-file ${{ env.ENVFILE }}
+          pull --quiet ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+      
+      - name: Update and start App
+        env:
+          IMAGE_NAME: ${{ steps.meta.outputs.tags }}
+          CI_PROJECT_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          ENV_VARS: ${{ inputs.env_vars }}
+        run: >
+          env && /usr/bin/docker compose
+          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          -f ${{ env.COMPOSEFILE }}
+          --env-file ${{ env.ENVFILE }}
+          up --detach ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+  # notify:
+  #   runs-on: apifornia-builder
+  # deploy-lint:
+  #   needs: [setup,build]
+  #   runs-on: ${{ needs.setup.outputs.RUNNER }}
+  #   steps:
+  #     - name: Compose Lint
+  #       run: |
+  #         /usr/local/bin/docker compose
+  #         --project-name ${CI_PROJECT_NAME}
+  #         --project-directory ${CI_APPLICATION_PATH:-/srv/app}/${CI_PROJECT_NAME}
+  #         --file ${BUILD_DOCKER_COMPOSEFILE:-docker-compose.yml}
+  #         config
