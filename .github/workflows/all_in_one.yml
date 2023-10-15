@@ -30,17 +30,13 @@ jobs:
             if [ ${GITHUB_REF_NAME} == 'dev' ]; then
               echo "TAG=dev" >> $GITHUB_OUTPUT
               echo "RUNNER=apifornia-dev" >> $GITHUB_OUTPUT
-              echo "BASE_DOMAIN=dev.apifornia.com" >> $GITHUB_OUTPUT
             fi
             if [ ${GITHUB_REF_NAME} == 'prod' ]; then
               echo "TAG=dev" >> $GITHUB_OUTPUT
               echo "RUNNER=apifornia-prod" >> $GITHUB_OUTPUT
-              echo "BASE_DOMAIN=apifornia.com" >> $GITHUB_OUTPUT
             fi
           else
-            echo "TAG=prod" >> $GITHUB_OUTPUT
-            echo "RUNNER=apifornia-prod" >> $GITHUB_OUTPUT
-            echo "BASE_DOMAIN=apifornia.com" >> $GITHUB_OUTPUT
+            exit 1
           fi
   build:
     runs-on: apifornia-builder
