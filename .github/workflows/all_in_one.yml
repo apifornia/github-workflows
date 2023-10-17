@@ -5,11 +5,18 @@ on:
         type: string
         default: ''
         required: false
-
-env:
-  DOCKERFILE: docker/images/dev/Dockerfile
-  COMPOSEFILE: docker/compose/dev/docker-compose.yml
-  ENVFILE: docker/compose/dev/.env
+      docker_file:
+        type: string
+        default: 'docker/images/dev/Dockerfile'
+        required: false
+      compose_file:
+        type: string
+        default: 'docker/compose/dev/docker-compose.yml'
+        required: false
+      env_file:
+        type: string
+        default: 'docker/compose/dev/.env'
+        required: false
 
 jobs:
   setup:
@@ -66,7 +73,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
-          file: ${{ env.DOCKERFILE }}
+          file: ${{ inputs.docker_file }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
   compose-up:
@@ -95,7 +102,7 @@ jobs:
 
       - name: Generate .env file
         run: |
-          echo "${{ inputs.env_vars }}" > ${{ env.ENVFILE }}
+          echo "${{ inputs.env_vars }}" > ${{ inputs.env_file }}
 
       - name: Lint and show compose manifest
         env:
@@ -105,8 +112,8 @@ jobs:
         run: >
           /usr/bin/docker compose
           -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
-          -f ${{ env.COMPOSEFILE }}
-          --env-file ${{ env.ENVFILE }}
+          -f ${{ inputs.compose_file }}
+          --env-file ${{ inputs.env_file }}
           convert
       
       - name: Pre-pull new Docker-image
@@ -117,8 +124,8 @@ jobs:
         run: >
           /usr/bin/docker compose
           -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
-          -f ${{ env.COMPOSEFILE }}
-          --env-file ${{ env.ENVFILE }}
+          -f ${{ inputs.compose_file }}
+          --env-file ${{ inputs.env_file }}
           pull --quiet
       
       - name: Update and start App
@@ -129,8 +136,8 @@ jobs:
         run: >
           env && /usr/bin/docker compose
           -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
-          -f ${{ env.COMPOSEFILE }}
-          --env-file ${{ env.ENVFILE }}
+          -f ${{ inputs.compose_file }}
+          --env-file ${{ inputs.env_file }}
           up --detach
   # notify:
   #   runs-on: apifornia-builder
