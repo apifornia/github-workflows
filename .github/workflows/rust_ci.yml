@@ -1,0 +1,19 @@
+on:
+  workflow_call:
+
+jobs:
+  tests:
+    name: tests
+    runs-on: apifornia-builder
+    steps:
+      - uses: actions/checkout@v3
+      - uses: apifornia/rust-toolchain@1.73.0
+        with:
+          components: "clippy"
+      - name: Install deps
+        run: |
+          sudo apt-get -qq -y install pkg-config build-essential libssl-dev curl python3-dev 
+      - name: Run clippy
+        run: cargo clippy --workspace
+      - name: Run tests
+        run: cargo test --workspace -- --test-threads=1
