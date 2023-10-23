@@ -1,5 +1,14 @@
 on:
   workflow_call:
+    inputs:
+      test_command:
+        type: string
+        default: 'npm run test'
+        required: false
+      node_version:
+        type: string
+        default: '18'
+        required: false
 
 jobs:
   tests:
@@ -9,6 +18,5 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          node-version: 18
-      - run: npm ci
-      - run: npm test
+          node-version: ${{ inputs.node_version }}
+      - run: ${{ inputs.test_command }}
