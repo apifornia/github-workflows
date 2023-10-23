@@ -49,6 +49,10 @@ jobs:
     runs-on: apifornia-builder
     needs: setup
     steps:
+      - name: Generate .env file
+        run: |
+          echo "${{ inputs.env_vars }}" > ${{ inputs.env_file }}
+
       - name: Checkout
         uses: actions/checkout@v3
         with:
@@ -76,10 +80,16 @@ jobs:
           file: ${{ inputs.docker_file }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
+          secret-files: |
+            "MY_SECRET=${{ inputs.env_file }}" 
   compose-up:
     needs: [setup,build]
     runs-on: ${{ needs.setup.outputs.RUNNER }}
     steps:
+      - name: Generate .env file
+        run: |
+          echo "${{ inputs.env_vars }}" > ${{ inputs.env_file }}
+
       - name: Checkout
         uses: actions/checkout@v3
         with:
@@ -99,10 +109,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Generate .env file
-        run: |
-          echo "${{ inputs.env_vars }}" > ${{ inputs.env_file }}
 
       - name: Lint and show compose manifest
         env:
