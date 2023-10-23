@@ -80,6 +80,10 @@ jobs:
           file: ${{ inputs.docker_file }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
+
+      - name: Cleanup
+        run: |
+          docker image rm -f ${{ steps.meta.outputs.tags }} || true
   compose-up:
     needs: [setup,build]
     runs-on: ${{ needs.setup.outputs.RUNNER }}
