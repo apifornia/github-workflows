@@ -55,8 +55,9 @@ jobs:
           fetch-depth: 1
 
       - name: Generate .env file
-        run: |
-          echo "${{ inputs.env_vars }}" > .env
+        run: echo "${ SECRET }" > ${{ inputs.env_file }}
+        env:
+          SECRET: ${{ inputs.env_vars }}
       
       - name: Get Docker metadata
         id: meta
@@ -94,9 +95,9 @@ jobs:
           fetch-depth: 1
 
       - name: Generate .env file
-        run: |
-          echo "::add-mask::${{ inputs.env_vars }}"
-          echo "${{ inputs.env_vars }}" > ${{ inputs.env_file }}
+        run: echo "${ SECRET }" > ${{ inputs.env_file }}
+        env:
+          SECRET: ${{ inputs.env_vars }}
       
       - name: Get Docker metadata
         id: meta
