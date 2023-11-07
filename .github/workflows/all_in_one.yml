@@ -1,10 +1,6 @@
 on:
   workflow_call:
     inputs:
-      env_vars:
-        type: string
-        default: ''
-        required: false
       docker_file:
         type: string
         default: 'docker/images/dev/Dockerfile'
@@ -16,6 +12,9 @@ on:
       env_file:
         type: string
         default: 'docker/compose/dev/.env'
+        required: false
+    secrets:
+      env_vars:
         required: false
 
 jobs:
@@ -55,9 +54,7 @@ jobs:
           fetch-depth: 1
 
       - name: Generate .env file
-        run: echo "${SECRET}" > ${{ inputs.env_file }}
-        env:
-          SECRET: ${{ inputs.env_vars }}
+        run: echo "${{ secrets.env_vars }}" > ${{ inputs.env_file }}
       
       - name: Get Docker metadata
         id: meta
@@ -95,9 +92,7 @@ jobs:
           fetch-depth: 1
 
       - name: Generate .env file
-        run: echo "${SECRET}" > ${{ inputs.env_file }}
-        env:
-          SECRET: ${{ inputs.env_vars }}
+        run: echo "${{ secrets.env_vars }}" > ${{ inputs.env_file }}
       
       - name: Get Docker metadata
         id: meta
