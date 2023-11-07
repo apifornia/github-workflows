@@ -55,7 +55,7 @@ jobs:
           fetch-depth: 1
 
       - name: Generate .env file
-        run: echo "${ SECRET }" > ${{ inputs.env_file }}
+        run: echo "${SECRET}" > ${{ inputs.env_file }}
         env:
           SECRET: ${{ inputs.env_vars }}
       
@@ -95,7 +95,7 @@ jobs:
           fetch-depth: 1
 
       - name: Generate .env file
-        run: echo "${ SECRET }" > ${{ inputs.env_file }}
+        run: echo "${SECRET}" > ${{ inputs.env_file }}
         env:
           SECRET: ${{ inputs.env_vars }}
       
