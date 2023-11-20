@@ -1,0 +1,26 @@
+on:
+  workflow_call:
+    secrets:
+      dev:
+        required: false
+      prod:
+        required: false
+
+jobs:
+  test:
+    runs-on: apifornia-builder
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+      
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Generate .env file
+        run: echo "${{ secrets.dev }}" > /file1 && echo "${{ secrets.dev }}" > /file1
+
+      - run: npm install && npm run test
+      
