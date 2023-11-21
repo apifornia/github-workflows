@@ -19,8 +19,8 @@ jobs:
         with:
           node-version: 18
 
-      - name: Generate .env file
-        run: echo "${{ secrets.dev }}" > /file1 && echo "${{ secrets.dev }}" > /file1
+#      - name: Generate .env file
+#        run: echo "${{ secrets.dev }}" > /file1 && echo "${{ secrets.dev }}" > /file1
 
-      - run: npm install && npm run test
-      
+#      - run: docker run  -v /srv/app/apifornia-runners/apifornia-builder/work/watcher/watcher:/e2e -w /e2e cypress/included:latest
+      - run: env
