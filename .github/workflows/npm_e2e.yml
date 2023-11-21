@@ -22,4 +22,4 @@ jobs:
 #      - name: Generate .env file
 #        run: echo "${{ secrets.dev }}" > /file1 && echo "${{ secrets.dev }}" > /file1
 
-      - run: REAL_DOCKER_PATH=$( echo $GITHUB_WORKSPACE | sed s'/tmp/srv\/app\/apifornia-runners\/apifornia-builder/') && echo $REAL_DOCKER_PATH && docker run  -v $REAL_DOCKER_PATH:/e2e -w /e2e cypress/included:latest
+      - run: REAL_DOCKER_PATH=$( echo $GITHUB_WORKSPACE | sed s'/tmp\/runner/srv\/app\/apifornia-runners\/apifornia-builder/') && docker run  -v $REAL_DOCKER_PATH:/e2e -w /e2e cypress/included:latest
