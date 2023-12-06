@@ -15,9 +15,6 @@ jobs:
   telegram:
     runs-on: apifornia-builder
     steps:
-      - id: fail
-        name: baaad
-        run: exit 1
       - id: send_tg
         if: always()
         name: Send Telegram message
