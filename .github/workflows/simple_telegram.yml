@@ -14,6 +14,7 @@ jobs:
         name: baaad
         run: exit 1
       - id: send_tg
+        if: always()
         name: Send Telegram message
         run: |
           TELEGRAM_MESSAGE="$GITHUB_WORKFLOW > $GITHUB_JOB > ${{ job.status }}"
