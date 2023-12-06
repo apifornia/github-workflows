@@ -13,4 +13,4 @@ jobs:
       - name: ENV
         run: env
       - name: test vars
-        run: echo ${{ vars.TELEGRAM_BOT}}
+        run: echo :${{ vars.TELEGRAM_BOT}}"
