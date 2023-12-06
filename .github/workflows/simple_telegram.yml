@@ -1,5 +1,10 @@
 on:
   workflow_call:
+    inputs:
+      tg_msg:
+        type: string
+        default: ''
+        required: false
     secrets:
       tg_bot:
         required: true
@@ -7,7 +12,7 @@ on:
         required: true
 
 jobs:
-  setup:
+  telegram:
     runs-on: apifornia-builder
     steps:
       - id: fail
@@ -17,5 +22,9 @@ jobs:
         if: always()
         name: Send Telegram message
         run: |
-          TELEGRAM_MESSAGE="$GITHUB_WORKFLOW > $GITHUB_JOB > ${{ job.status }}"
+          if [ ${{ inputs.tg_msg }} == '' ]; then
+            TELEGRAM_MESSAGE="<a href='https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/'>$GITHUB_WORKFLOW > $GITHUB_JOB > <b>${{ job.status }}</b></a>"
+          else
+            TELEGRAM_MESSAGE="<a href='https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/'>{{ inputs.tg_msg }} > <b>${{ job.status }}</b></a>"
+          fi
           curl -s -X POST -d chat_id="${{ secrets.tg_channel }}" -d text="$TELEGRAM_MESSAGE" -d parse_mode=HTML -d disable_web_page_preview=true https://api.telegram.org/bot${{ secrets.tg_bot }}/sendMessage || true
