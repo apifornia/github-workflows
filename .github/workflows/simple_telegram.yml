@@ -10,8 +10,11 @@ jobs:
   setup:
     runs-on: apifornia-builder
     steps:
+      - id: fail
+        name: baaad
+        run: exit 1
       - id: send_tg
         name: Send Telegram message
         run: |
-          TELEGRAM_MESSAGE="$GITHUB_WORKFLOW > $GITHUB_WORKFLOW > ${{ job.status }}"
+          TELEGRAM_MESSAGE="$GITHUB_WORKFLOW > $GITHUB_JOB > ${{ job.status }}"
           curl -s -X POST -d chat_id="${{ secrets.tg_channel }}" -d text="$TELEGRAM_MESSAGE" -d parse_mode=HTML -d disable_web_page_preview=true https://api.telegram.org/bot${{ secrets.tg_bot }}/sendMessage || true
