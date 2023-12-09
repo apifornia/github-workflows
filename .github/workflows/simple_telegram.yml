@@ -15,13 +15,23 @@ jobs:
   telegram:
     runs-on: apifornia-builder
     steps:
-      - id: send_tg
-        if: always()
-        name: Send Telegram message
+      - id: send_tg_ok
+        if: ${{ success() }}
+        name: Send Telegram message OK
         run: |
           if [ "${{ inputs.tg_msg }}" == '' ]; then
-            TELEGRAM_MESSAGE="<a href='https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/'>$GITHUB_WORKFLOW > $GITHUB_JOB > <b>${{ job.status }}</b></a>"
+            TELEGRAM_MESSAGE="<a href='https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/'>$GITHUB_WORKFLOW > $GITHUB_JOB > <b>SUCCESS</b></a>"
           else
-            TELEGRAM_MESSAGE="<a href='https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/'>${{ inputs.tg_msg }} > <b>${{ job.status }}</b></a>"
+            TELEGRAM_MESSAGE="<a href='https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/'>${{ inputs.tg_msg }} > <b>SUCCESS</b></a>"
+          fi
+          curl -s -X POST -d chat_id="${{ secrets.tg_channel }}" -d text="$TELEGRAM_MESSAGE" -d parse_mode=HTML -d disable_web_page_preview=true https://api.telegram.org/bot${{ secrets.tg_bot }}/sendMessage || true
+      - id: send_tg_nok
+        if: ${{ failure() }}
+        name: Send Telegram message NOK
+        run: |
+          if [ "${{ inputs.tg_msg }}" == '' ]; then
+            TELEGRAM_MESSAGE="<a href='https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/'>$GITHUB_WORKFLOW > $GITHUB_JOB > <b>FAIL</b></a>"
+          else
+            TELEGRAM_MESSAGE="<a href='https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/'>${{ inputs.tg_msg }} > <b>FAIL</b></a>"
           fi
           curl -s -X POST -d chat_id="${{ secrets.tg_channel }}" -d text="$TELEGRAM_MESSAGE" -d parse_mode=HTML -d disable_web_page_preview=true https://api.telegram.org/bot${{ secrets.tg_bot }}/sendMessage || true
