@@ -1,6 +1,10 @@
 on:
   workflow_call:
     inputs:
+      status:
+        type: string
+        default: ''
+        required: false
       tg_msg:
         type: string
         default: ''
@@ -16,22 +20,22 @@ jobs:
     runs-on: apifornia-builder
     steps:
       - id: send_tg_ok
-        if: ${{ success() }}
+#        if: ${{ success() }}
         name: Send Telegram message OK
         run: |
           if [ "${{ inputs.tg_msg }}" == '' ]; then
-            TELEGRAM_MESSAGE="<a href='https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/'>$GITHUB_WORKFLOW > $GITHUB_JOB > <b>SUCCESS</b></a>"
+            TELEGRAM_MESSAGE="<a href='https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/'>$GITHUB_WORKFLOW > $GITHUB_JOB > <b>${{ inputs.status }}</b></a>"
           else
-            TELEGRAM_MESSAGE="<a href='https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/'>${{ inputs.tg_msg }} > <b>SUCCESS</b></a>"
+            TELEGRAM_MESSAGE="<a href='https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/'>${{ inputs.tg_msg }} > <b>${{ inputs.status }}</b></a>"
           fi
           curl -s -X POST -d chat_id="${{ secrets.tg_channel }}" -d text="$TELEGRAM_MESSAGE" -d parse_mode=HTML -d disable_web_page_preview=true https://api.telegram.org/bot${{ secrets.tg_bot }}/sendMessage || true
-      - id: send_tg_nok
-        if: ${{ failure() }}
-        name: Send Telegram message NOK
-        run: |
-          if [ "${{ inputs.tg_msg }}" == '' ]; then
-            TELEGRAM_MESSAGE="<a href='https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/'>$GITHUB_WORKFLOW > $GITHUB_JOB > <b>FAIL</b></a>"
-          else
-            TELEGRAM_MESSAGE="<a href='https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/'>${{ inputs.tg_msg }} > <b>FAIL</b></a>"
-          fi
-          curl -s -X POST -d chat_id="${{ secrets.tg_channel }}" -d text="$TELEGRAM_MESSAGE" -d parse_mode=HTML -d disable_web_page_preview=true https://api.telegram.org/bot${{ secrets.tg_bot }}/sendMessage || true
+#      - id: send_tg_nok
+#        if: ${{ failure() }}
+#        name: Send Telegram message NOK
+#        run: |
+#          if [ "${{ inputs.tg_msg }}" == '' ]; then
+#            TELEGRAM_MESSAGE="<a href='https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/'>$GITHUB_WORKFLOW > $GITHUB_JOB > <b>FAIL</b></a>"
+#          else
+#            TELEGRAM_MESSAGE="<a href='https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/'>${{ inputs.tg_msg }} > <b>FAIL</b></a>"
+#          fi
+#          curl -s -X POST -d chat_id="${{ secrets.tg_channel }}" -d text="$TELEGRAM_MESSAGE" -d parse_mode=HTML -d disable_web_page_preview=true https://api.telegram.org/bot${{ secrets.tg_bot }}/sendMessage || true
