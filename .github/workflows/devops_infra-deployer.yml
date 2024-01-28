@@ -24,13 +24,10 @@ jobs:
           
       - name: App check
         run: |
-          ls -lah
-          env
-          echo ${{ inputs.env }}
           if [ -d "./docker-compose/${{ inputs.env }}/${{ inputs.app }}" ]; then
-            Okay :)
+            echo "Okay"
           else
-            Application does for exist for the selected env -  ${{ inputs.env }}
+            echo "Application does for exist for the selected env -  ${{ inputs.env }}
             exit 1
           fi
 
