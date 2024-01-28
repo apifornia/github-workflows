@@ -1,0 +1,78 @@
+name: Restarter
+
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        type: choice
+        description: Target env
+        options: 
+        - test
+        - prod
+      action:
+        type: choice
+        description: Action
+        options: 
+        - restart
+        - kill
+      app:
+        type: choice
+        description: App to restart
+        options: 
+        - ALL
+        - ALL_BASE
+        - ALL_APPS
+        - mongo
+        - kafka
+        - postgres
+        - traefik
+        - ghost
+        - landing_proxy
+        - filebeat
+        - flow-core
+        - wizard
+        - scheduler
+        - flow-editor-vue3
+        - worker-rust
+        - worker-python
+        - worker-lambda
+jobs:
+  restarts:
+    runs-on: apifornia-${{ inputs.env }}
+    steps:
+      - name: Restarts
+        run: |
+          ALL_BASE=("mongo" "kafka" "zookeeper" "postgres" "traefik" "filebeat" "ghost" "landing_proxy")
+          ALL_APPS=("cat" "dog")
+
+          if [ "${{ inputs.app }}" == 'ALL' ]; then
+            for str in ${ALL_BASE[@]}; do
+              docker ${{ inputs.action }} $str || true
+            done
+            for str in ${ALL_APPS[@]}; do
+              docker ${{ inputs.action }} $str || true
+            done
+          fi
+
+          if [ "${{ inputs.app }}" == 'ALL_BASE' ]; then
+            for str in ${ALL_BASE[@]}; do
+              docker ${{ inputs.action }} $str || true
+            done
+          fi
+
+          if [ "${{ inputs.app }}" == 'ALL_APPS' ]; then
+            for str in ${ALL_APPS[@]}; do
+              docker ${{ inputs.action }} $str || true
+            done
+          fi
+
+  # telegram_notify:
+  #   if: ${{ always() }}
+  #   needs: [ restarts ]
+  #   uses: apifornia/github-workflows/.github/workflows/simple_telegram.yml@main
+  #   with:
+  #     status: "FAILURE"
+  #     tg_msg: "E2E ${{ inputs.env }}"
+  #   secrets:
+  #     tg_bot: ${{ vars.TELEGRAM_BOT }}
+  #     tg_channel: ${{ vars.TELEGRAM_CHANNEL }}
