@@ -24,6 +24,7 @@ jobs:
           
       - name: App check
         run: |
+          ls -lah
           env
           echo ${{ inputs.env }}
           if [ -d "./docker-compose/${{ inputs.env }}/${{ inputs.app }}" ]; then
