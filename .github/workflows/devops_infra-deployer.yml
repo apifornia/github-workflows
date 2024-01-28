@@ -27,7 +27,7 @@ jobs:
           if [ -d "./docker-compose/${{ inputs.env }}/${{ inputs.app }}" ]; then
             echo "Okay"
           else
-            echo "Application does for exist for the selected env -  ${{ inputs.env }}
+            echo "Application does for exist for the selected env -  ${{ inputs.env }}"
             exit 1
           fi
 
