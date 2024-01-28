@@ -3,7 +3,7 @@ name: Infra-Deployer
 on:
   workflow_call:
     inputs:
-      target_env:
+      env:
         type: string
         required: true
       app:
@@ -15,7 +15,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: apifornia-${{ inputs.target_env }}
+    runs-on: apifornia-${{ inputs.env }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -24,10 +24,10 @@ jobs:
           
       - name: App check
         run: |
-          if [ -d "./docker-compose/${{ inputs.target_env }}/${{ inputs.app }}" ]; then
+          if [ -d "./docker-compose/${{ inputs.env }}/${{ inputs.app }}" ]; then
             Okay :)
           else
-            Application does for exist for the selected env -  ${{ inputs.target_env }}
+            Application does for exist for the selected env -  ${{ inputs.env }}
             exit 1
           fi
 
@@ -37,13 +37,13 @@ jobs:
       - name: Docker Compose Down
         run: >
           /usr/bin/docker compose
-          -f ./docker-compose/${{ inputs.target_env }}/${{ inputs.app }}/docker-compose.yml
+          -f ./docker-compose/${{ inputs.env }}/${{ inputs.app }}/docker-compose.yml
           down || true
 
 
       - name: Docker Compose up
         run: >
           /usr/bin/docker compose
-          -f ./docker-compose/${{ inputs.target_env }}/${{ inputs.app }}/docker-compose.yml
+          -f ./docker-compose/${{ inputs.env }}/${{ inputs.app }}/docker-compose.yml
           --env-file .env
           up --detach
