@@ -30,7 +30,7 @@ jobs:
           fi
 
       - name: Generate .env file
-        run: echo "${{ secrets.env_vars }}" > .env
+        run: cd ./docker-compose/${{ inputs.env }}/${{ inputs.app }} && echo "${{ secrets.env_vars }}" > .env
 
       - name: Docker Compose Down
         run: >
