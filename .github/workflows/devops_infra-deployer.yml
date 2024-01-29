@@ -1,5 +1,3 @@
-name: Infra-Deployer
-
 on:
   workflow_call:
     inputs:

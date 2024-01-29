@@ -1,43 +1,18 @@
-name: Restarter
-
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
       env:
-        type: choice
-        description: Target env
-        options: 
-        - test
-        - prod
+        type: string
+        required: true
       action:
-        type: choice
-        description: Action
-        options: 
-        - restart
-        - kill
+        type: string
+        required: true
       app:
-        type: choice
-        description: App to restart
-        options: 
-        - ALL
-        - ALL_BASE
-        - ALL_APPS
-        - mongo
-        - kafka
-        - postgres
-        - traefik
-        - ghost
-        - landing_proxy
-        - filebeat
-        - flow-core
-        - wizard
-        - scheduler
-        - flow-editor-vue3
-        - worker-rust
-        - worker-python
-        - worker-lambda
+        type: string
+        required: true
+
 jobs:
-  restarts:
+  restarter:
     runs-on: apifornia-${{ inputs.env }}
     steps:
       - name: Restarts
@@ -64,6 +39,10 @@ jobs:
             for str in ${ALL_APPS[@]}; do
               docker ${{ inputs.action }} $str || true
             done
+          fi
+
+          if [ "${{ inputs.app }}" != 'ALL' ] && [ "${{ inputs.app }}" != 'ALL_BASE' ] && [ "${{ inputs.app }}" != 'ALL_APPS' ]; then
+            docker ${{ inputs.action }} ${{ inputs.app }} || true
           fi
 
   # telegram_notify:
