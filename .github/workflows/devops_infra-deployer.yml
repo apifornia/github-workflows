@@ -34,7 +34,7 @@ jobs:
 
       - name: Docker Compose Down
         run: >
-          cd  ./docker-compose/${{ inputs.env }}/${{ inputs.app }}
+          cd  ./docker-compose/${{ inputs.env }}/${{ inputs.app }} &&
           /usr/bin/docker compose
           -f docker-compose.yml
           down || true
@@ -42,7 +42,7 @@ jobs:
 
       - name: Docker Compose up
         run: >
-          cd ./docker-compose/${{ inputs.env }}/${{ inputs.app }}
+          cd ./docker-compose/${{ inputs.env }}/${{ inputs.app }} &&
           /usr/bin/docker compose
           -f ./docker-compose.yml
           --env-file .env
