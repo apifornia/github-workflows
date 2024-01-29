@@ -34,14 +34,16 @@ jobs:
 
       - name: Docker Compose Down
         run: >
+          cd  ./docker-compose/${{ inputs.env }}/${{ inputs.app }}
           /usr/bin/docker compose
-          -f ./docker-compose/${{ inputs.env }}/${{ inputs.app }}/docker-compose.yml
+          -f docker-compose.yml
           down || true
 
 
       - name: Docker Compose up
         run: >
+          cd ./docker-compose/${{ inputs.env }}/${{ inputs.app }}
           /usr/bin/docker compose
-          -f ./docker-compose/${{ inputs.env }}/${{ inputs.app }}/docker-compose.yml
+          -f ./docker-compose.yml
           --env-file .env
           up --detach
