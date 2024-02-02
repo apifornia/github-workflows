@@ -17,8 +17,8 @@ jobs:
     steps:
       - name: Restarts
         run: |
-          ALL_BASE=("mongo" "kafka" "zookeeper" "postgres" "traefik" "filebeat" "ghost" "landing_proxy")
-          ALL_APPS=("cat" "dog")
+          ALL_BASE=("mongo" "broker" "zookeeper" "postgres" "traefik" "filebeat" "ghost" "landing_proxy" "node-exporter")
+          ALL_APPS=("wizard" "flow-editor" "worker-python" "worker-scheduler" "worker-rust" "flow-core" "scheduler-ms")
 
           if [ "${{ inputs.app }}" == 'ALL' ]; then
             for str in ${ALL_BASE[@]}; do
