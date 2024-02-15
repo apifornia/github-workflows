@@ -1,6 +1,10 @@
 on:
   workflow_call:
     inputs:
+      runs_on:
+        type: string
+        default: 'apifornia-builder'
+        required: false
       status:
         type: string
         default: ''
@@ -17,7 +21,7 @@ on:
 
 jobs:
   telegram:
-    runs-on: apifornia-builder
+    runs-on: ${{ inputs.runs_on }}
     steps:
       - id: send_tg_ok
 #        if: ${{ success() }}
