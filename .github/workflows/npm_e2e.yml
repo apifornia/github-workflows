@@ -33,3 +33,5 @@ jobs:
           docker container rm cypress || true
           docker run --name cypress --env-file	${{ inputs.env }}.env -v $REAL_DOCKER_PATH:/e2e -w /e2e cypress/included:latest
           docker logs cypress | ansi2html > log.html
+          ls -lahR
+          
