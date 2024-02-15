@@ -30,4 +30,4 @@ jobs:
         run: |
           npm install
           REAL_DOCKER_PATH=$( echo $GITHUB_WORKSPACE | sed s'/tmp\/runner/srv\/app\/apifornia-runners\/apifornia-builder/')
-          docker run --env-file	${{ inputs.env }}.env -v $REAL_DOCKER_PATH:/e2e -w /e2e --rm cypress/included:latest
+          docker run --env-file	${{ inputs.env }}.env -v $REAL_DOCKER_PATH:/e2e -w /e2e cypress/included:latest
