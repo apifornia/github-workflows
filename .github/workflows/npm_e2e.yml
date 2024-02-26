@@ -36,4 +36,10 @@ jobs:
           docker run --name cypress --env-file	${{ inputs.env }}.env -v $REAL_DOCKER_PATH:/e2e -v /srv/app/apifornia-runners/apifornia-builder/work/cypres:/cypress -w /e2e cypress/included:latest  || true
           docker logs cypress | ansi2html > /tmp/runner/work/cypress/log.html
           cp -r ./cypress/screenshots/  /tmp/runner/work/cypress/
+          EXIT=$(docker inspect cypress --format='{{.State.ExitCode}}')
+          if [ "$EXIT" != "0" ]; then
+            exit 1
+          else
+            exit 0
+          fi
           
