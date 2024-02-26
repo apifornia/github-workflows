@@ -5,6 +5,10 @@ on:
         type: string
         default: 'apifornia-builder'
         required: false
+      file:
+        type: string
+        default: ''
+        required: true
     secrets:
       tg_bot:
         required: true
@@ -18,4 +22,4 @@ jobs:
       - id: send_tg_ok
         name: Send Telegram File
         run: |
-          curl -s -X POST https://api.telegram.org/bot${{ secrets.tg_bot }}/sendDocument?chat_id=${{ secrets.tg_channel }} || true
+          curl -s -X POST -F document=@"${{ inputs.file }}" https://api.telegram.org/bot${{ secrets.tg_bot }}/sendDocument?chat_id=${{ secrets.tg_channel }} || true
