@@ -31,9 +31,9 @@ jobs:
           npm install
           REAL_DOCKER_PATH=$( echo $GITHUB_WORKSPACE | sed s'/tmp\/runner/srv\/app\/apifornia-runners\/apifornia-builder/')
           docker container rm cypress || true
-          #rm -rf  /tmp/runner/work/cypress/ || true && mkdir /tmp/runner/work/cypress/
-          docker run --name cypress --env-file	${{ inputs.env }}.env -v $REAL_DOCKER_PATH:/e2e -w /e2e cypress/included:latest
-          #docker run --name cypress --env-file	${{ inputs.env }}.env -v $REAL_DOCKER_PATH:/e2e -v /srv/app/apifornia-runners/apifornia-builder/work/cypres:/cypress -w /e2e cypress/included:latest  || true
-          #docker logs cypress | ansi2html > /tmp/runner/work/cypress/log.html
-          #cp -r ./cypress/screenshots/  /tmp/runner/work/cypress/
+          rm -rf  /tmp/runner/work/cypress/ || true && mkdir /tmp/runner/work/cypress/
+          #docker run --name cypress --env-file	${{ inputs.env }}.env -v $REAL_DOCKER_PATH:/e2e -w /e2e cypress/included:latest
+          docker run --name cypress --env-file	${{ inputs.env }}.env -v $REAL_DOCKER_PATH:/e2e -v /srv/app/apifornia-runners/apifornia-builder/work/cypres:/cypress -w /e2e cypress/included:latest  || true
+          docker logs cypress | ansi2html > /tmp/runner/work/cypress/log.html
+          cp -r ./cypress/screenshots/  /tmp/runner/work/cypress/
           
