@@ -1,0 +1,21 @@
+on:
+  workflow_call:
+    inputs:
+      runs_on:
+        type: string
+        default: 'apifornia-builder'
+        required: false
+    secrets:
+      tg_bot:
+        required: true
+      tg_channel:
+        required: true
+
+jobs:
+  telegram:
+    runs-on: ${{ inputs.runs_on }}
+    steps:
+      - id: send_tg_ok
+        name: Send Telegram File
+        run: |
+          curl -s -X POST https://api.telegram.org/bot${{ secrets.tg_bot }}/sendDocument?chat_id=${{ secrets.tg_channel }} || true
