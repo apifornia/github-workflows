@@ -19,7 +19,7 @@ jobs:
   telegram:
     runs-on: ${{ inputs.runs_on }}
     steps:
-      - id: send_tg_ok
+      - id: sendDocument
         name: Send Telegram File
         run: |
           curl -s -X POST -F document=@"${{ inputs.file }}" https://api.telegram.org/bot${{ secrets.tg_bot }}/sendDocument?chat_id=${{ secrets.tg_channel }} || true
