@@ -26,4 +26,4 @@ jobs:
       - id: sendDocument
         name: Send Telegram File
         run: |
-          find ${{ inputs.folder }} -name "${{ inputs.file }}" -exec curl -X POST -F document=@"{}" https://api.telegram.org/bot${{ secrets.tg_bot }}/sendDocument?chat_id=${{ secrets.tg_channel }} || true \;
+          find ${{ inputs.folder }} -name "${{ inputs.file }}" -exec curl -X POST -F document=@"{}" https://api.telegram.org/bot${{ secrets.tg_bot }}/sendDocument?chat_id=${{ secrets.tg_channel }} \; || true
