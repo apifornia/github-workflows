@@ -93,6 +93,7 @@ jobs:
           context: .
           file: ./common/docker/images/dev/Dockerfile
           push: false
+          tags: wizard-common
 
       - name: Build Chamber
         uses: docker/build-push-action@v6
