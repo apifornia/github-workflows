@@ -1,0 +1,188 @@
+on:
+  workflow_call:
+    inputs:
+      docker_file:
+        type: string
+        default: 'docker/images/dev/Dockerfile'
+        required: false
+      compose_file:
+        type: string
+        default: 'docker/compose/dev/docker-compose.yml'
+        required: false
+      env_file:
+        type: string
+        default: 'docker/compose/dev/.env'
+        required: false
+    secrets:
+      env_vars:
+        required: false
+
+jobs:
+  setup:
+    runs-on: apifornia-builder
+    outputs:
+      CALLER_REPO_NAME: ${{ steps.setup.outputs.CALLER_REPO_NAME }}
+      RUNNER: ${{ steps.setup.outputs.RUNNER }}
+      TAG: ${{ steps.setup.outputs.TAG }}
+      BASE_DOMAIN: ${{ steps.setup.outputs.BASE_DOMAIN }}
+    steps:
+      - id: setup
+        name: Configuration setup
+        run: |
+            split=(${GITHUB_REPOSITORY//\// })
+            echo "CALLER_REPO_NAME=${split[1]}" >> $GITHUB_OUTPUT
+            
+            if [ ${GITHUB_REF_TYPE} == 'tag' ]; then
+              if [ ${GITHUB_REF_NAME} == 'dev' ]; then
+                echo "TAG=dev" >> $GITHUB_OUTPUT
+                echo "RUNNER=apifornia-dev" >> $GITHUB_OUTPUT
+                OK="yes"
+              fi
+              if [ ${GITHUB_REF_NAME} == 'prod' ]; then
+                echo "TAG=dev" >> $GITHUB_OUTPUT
+                echo "RUNNER=apifornia-prod" >> $GITHUB_OUTPUT
+                OK="yes"
+              fi
+            fi
+            
+            if [ ${GITHUB_REF_TYPE} == 'branch' ]; then
+              if [ ${GITHUB_REF_NAME} == 'develop' ]; then
+                echo "TAG=dev" >> $GITHUB_OUTPUT
+                echo "RUNNER=apifornia-dev" >> $GITHUB_OUTPUT
+                OK="yes"
+              fi
+            fi
+            
+            if [ ${OK} == 'yes' ]; then
+              echo "All good"
+            else
+              echo "ERROR: deployment can't proceed"
+              exit 1
+            fi
+  build:
+    runs-on: apifornia-builder
+    needs: setup
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Generate .env file
+        run: echo "${{ secrets.env_vars }}" > ${{ inputs.env_file }}
+      
+      - name: Get Docker metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=${{ github.sha }}
+            type=raw,value=latest
+      
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Build Common
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./common/docker/images/dev/Dockerfile
+          push: false
+
+      - name: Build Chamber
+        uses: docker/build-push-action@v6
+        with:
+          context: ./chamber
+          file: ./chamber/docker/images/dev/Dockerfile
+          push: false
+          
+      - name: Build Spelloom
+        uses: docker/build-push-action@v6
+        with:
+          context: ./spelloom
+          file: ./spelloom/docker/images/dev/Dockerfile
+          push: false
+
+      - name: Cleanup
+        run: |
+          docker image rm -f ${{ steps.meta.outputs.tags }} || true
+  compose-up:
+    needs: [setup,build]
+    runs-on: ${{ needs.setup.outputs.RUNNER }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - name: Generate .env file
+        run: echo "${{ secrets.env_vars }}" > ${{ inputs.env_file }}
+      
+      - name: Get Docker metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=${{ github.sha }}
+      
+      - name: Login to Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Lint and show compose manifest
+        env:
+          IMAGE_NAME: ${{ steps.meta.outputs.tags }}
+          CI_PROJECT_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          ENV_VARS: ${{ inputs.env_vars }}
+        run: >
+          /usr/bin/docker compose
+          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          -f ${{ inputs.compose_file }}
+          --env-file ${{ inputs.env_file }}
+          convert
+      
+      - name: Pre-pull new Docker-image
+        env:
+          IMAGE_NAME: ${{ steps.meta.outputs.tags }}
+          CI_PROJECT_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          ENV_VARS: ${{ inputs.env_vars }}
+        run: >
+          /usr/bin/docker compose
+          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          -f ${{ inputs.compose_file }}
+          --env-file ${{ inputs.env_file }}
+          pull --quiet
+      
+      - name: Update and start App
+        env:
+          IMAGE_NAME: ${{ steps.meta.outputs.tags }}
+          CI_PROJECT_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          ENV_VARS: ${{ inputs.env_vars }}
+        run: >
+          env && /usr/bin/docker compose
+          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          -f ${{ inputs.compose_file }}
+          --env-file ${{ inputs.env_file }}
+          up --detach
+  # notify:
+  #   runs-on: apifornia-builder
+  # deploy-lint:
+  #   needs: [setup,build]
+  #   runs-on: ${{ needs.setup.outputs.RUNNER }}
+  #   steps:
+  #     - name: Compose Lint
+  #       run: |
+  #         /usr/local/bin/docker compose
+  #         --project-name ${CI_PROJECT_NAME}
+  #         --project-directory ${CI_APPLICATION_PATH:-/srv/app}/${CI_PROJECT_NAME}
+  #         --file ${BUILD_DOCKER_COMPOSEFILE:-docker-compose.yml}
+  #         config
