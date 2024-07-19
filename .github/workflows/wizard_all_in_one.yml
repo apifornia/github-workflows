@@ -176,7 +176,7 @@ jobs:
           ENV_VARS: ${{ inputs.env_vars }}
         run: >
           /usr/bin/docker compose
-          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
           -f ./${{ matrix.sub_project }}/docker/compose/dev/docker-compose.yml
           --env-file ${{ inputs.env_file }}
           convert
@@ -188,7 +188,7 @@ jobs:
           ENV_VARS: ${{ inputs.env_vars }}
         run: >
           /usr/bin/docker compose
-          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }} - ${{ matrix.sub_project }}
+          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
           -f ./${{ matrix.sub_project }}/docker/compose/dev/docker-compose.yml
           --env-file ${{ inputs.env_file }}
           pull --quiet
@@ -200,7 +200,7 @@ jobs:
           ENV_VARS: ${{ inputs.env_vars }}
         run: >
           env && /usr/bin/docker compose
-          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
           -f ./${{ matrix.sub_project }}/docker/compose/dev/docker-compose.yml
           --env-file ${{ inputs.env_file }}
           up --detach
