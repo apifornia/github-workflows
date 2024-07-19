@@ -188,47 +188,23 @@ jobs:
           ENV_VARS: ${{ inputs.env_vars }}
         run: >
           /usr/bin/docker compose
-          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }} - ${{ matrix.sub_project }}
           -f ./${{ matrix.sub_project }}/docker/compose/dev/docker-compose.yml
           --env-file ${{ inputs.env_file }}
           pull --quiet
-          
-      # - name: Pre-pull new Docker-image Spelloom
-        # env:
-          # IMAGE_NAME: ${{ steps.meta.outputs.tags }}
-          # CI_PROJECT_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}
-          # ENV_VARS: ${{ inputs.env_vars }}
-        # run: >
-          # /usr/bin/docker compose
-          # -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
-          # -f ./spelloom/docker/compose/dev/docker-compose.yml
-          # --env-file ${{ inputs.env_file }}
-          # pull --quiet
-      
-      # - name: Update and start Chamber
-        # env:
-          # IMAGE_NAME: ${{ steps.meta.outputs.tags }}
-          # CI_PROJECT_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}
-          # ENV_VARS: ${{ inputs.env_vars }}
-        # run: >
-          # env && /usr/bin/docker compose
-          # -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
-          # -f ./chamber/docker/compose/dev/docker-compose.yml
-          # --env-file ${{ inputs.env_file }}
-          # up --detach
+         
+      - name: Update and start - ${{ matrix.sub_project }}
+        env:
+          IMAGE_NAME: ${{ steps.meta.outputs.tags }}
+          CI_PROJECT_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          ENV_VARS: ${{ inputs.env_vars }}
+        run: >
+          env && /usr/bin/docker compose
+          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          -f ./${{ matrix.sub_project }}/docker/compose/dev/docker-compose.yml
+          --env-file ${{ inputs.env_file }}
+          up --detach
 
-      # - name: Update and start Spelloom
-        # env:
-          # IMAGE_NAME: ${{ steps.meta.outputs.tags }}
-          # CI_PROJECT_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}
-          # ENV_VARS: ${{ inputs.env_vars }}
-        # run: >
-          # env && /usr/bin/docker compose
-          # -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
-          # -f ./spelloom/docker/compose/dev/docker-compose.yml
-          # --env-file ${{ inputs.env_file }}
-          # up --detach
-          
   # notify:
   #   runs-on: apifornia-builder
   # deploy-lint:
