@@ -6,8 +6,8 @@ on:
         default: 'docker/images/dev/Dockerfile'
         required: false
       compose_files:
-        type: list
-        default: ['./chamber/docker/compose/dev/docker-compose.yml','./spelloom/docker/compose/dev/docker-compose.yml']
+        type: string
+        default: 'does not work here :-('
         required: false
       env_file:
         type: string
@@ -144,7 +144,7 @@ jobs:
     runs-on: ${{ needs.setup.outputs.RUNNER }}
     strategy:
       matrix:
-        compose_file: inputs.compose_files
+        compose_file: ['./chamber/docker/compose/dev/docker-compose.yml','./spelloom/docker/compose/dev/docker-compose.yml']
     steps:
       - name: Checkout
         uses: actions/checkout@v3
