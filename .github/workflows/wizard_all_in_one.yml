@@ -5,9 +5,9 @@ on:
         type: string
         default: 'docker/images/dev/Dockerfile'
         required: false
-      compose_file:
-        type: string
-        default: 'docker/compose/dev/docker-compose.yml'
+      compose_files:
+        type: list
+        default: ['./chamber/docker/compose/dev/docker-compose.yml','./spelloom/docker/compose/dev/docker-compose.yml']
         required: false
       env_file:
         type: string
@@ -141,6 +141,9 @@ jobs:
   compose-up:
     needs: [setup,build]
     runs-on: ${{ needs.setup.outputs.RUNNER }}
+    strategy:
+      matrix:
+        compose_file: ${{ inputs.compose_files }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -149,14 +152,6 @@ jobs:
 
       - name: Generate .env file
         run: echo "${{ secrets.env_vars }}" > ${{ inputs.env_file }}
-      
-      # - name: Get Docker metadata
-        # id: meta
-        # uses: docker/metadata-action@v4
-        # with:
-          # images: ghcr.io/${{ github.repository }}
-          # tags: |
-            # type=raw,value=${{ github.sha }}
       
       - name: Login to Container Registry
         uses: docker/login-action@v2
@@ -173,69 +168,58 @@ jobs:
         run: >
           /usr/bin/docker compose
           -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
-          -f ./chamber/docker/compose/dev/docker-compose.yml
+          -f ${{ matrix.compose_file }}
           --env-file ${{ inputs.env_file }}
           convert
           
-      - name: Lint and show compose manifest Spelloom
-        env:
-          IMAGE_NAME: ${{ steps.meta-spelloom.outputs.tags }}
-          CI_PROJECT_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}
-          ENV_VARS: ${{ inputs.env_vars }}
-        run: >
-          /usr/bin/docker compose
-          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
-          -f ./spelloom/docker/compose/dev/docker-compose.yml
-          --env-file ${{ inputs.env_file }}
-          convert
       
-      - name: Pre-pull new Docker-image Chamber
-        env:
-          IMAGE_NAME: ${{ steps.meta.outputs.tags }}
-          CI_PROJECT_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}
-          ENV_VARS: ${{ inputs.env_vars }}
-        run: >
-          /usr/bin/docker compose
-          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
-          -f ./chamber/docker/compose/dev/docker-compose.yml
-          --env-file ${{ inputs.env_file }}
-          pull --quiet
+      # - name: Pre-pull new Docker-image Chamber
+        # env:
+          # IMAGE_NAME: ${{ steps.meta.outputs.tags }}
+          # CI_PROJECT_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          # ENV_VARS: ${{ inputs.env_vars }}
+        # run: >
+          # /usr/bin/docker compose
+          # -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          # -f ./chamber/docker/compose/dev/docker-compose.yml
+          # --env-file ${{ inputs.env_file }}
+          # pull --quiet
           
-      - name: Pre-pull new Docker-image Spelloom
-        env:
-          IMAGE_NAME: ${{ steps.meta.outputs.tags }}
-          CI_PROJECT_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}
-          ENV_VARS: ${{ inputs.env_vars }}
-        run: >
-          /usr/bin/docker compose
-          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
-          -f ./spelloom/docker/compose/dev/docker-compose.yml
-          --env-file ${{ inputs.env_file }}
-          pull --quiet
+      # - name: Pre-pull new Docker-image Spelloom
+        # env:
+          # IMAGE_NAME: ${{ steps.meta.outputs.tags }}
+          # CI_PROJECT_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          # ENV_VARS: ${{ inputs.env_vars }}
+        # run: >
+          # /usr/bin/docker compose
+          # -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          # -f ./spelloom/docker/compose/dev/docker-compose.yml
+          # --env-file ${{ inputs.env_file }}
+          # pull --quiet
       
-      - name: Update and start Chamber
-        env:
-          IMAGE_NAME: ${{ steps.meta.outputs.tags }}
-          CI_PROJECT_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}
-          ENV_VARS: ${{ inputs.env_vars }}
-        run: >
-          env && /usr/bin/docker compose
-          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
-          -f ./chamber/docker/compose/dev/docker-compose.yml
-          --env-file ${{ inputs.env_file }}
-          up --detach
+      # - name: Update and start Chamber
+        # env:
+          # IMAGE_NAME: ${{ steps.meta.outputs.tags }}
+          # CI_PROJECT_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          # ENV_VARS: ${{ inputs.env_vars }}
+        # run: >
+          # env && /usr/bin/docker compose
+          # -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          # -f ./chamber/docker/compose/dev/docker-compose.yml
+          # --env-file ${{ inputs.env_file }}
+          # up --detach
 
-      - name: Update and start Spelloom
-        env:
-          IMAGE_NAME: ${{ steps.meta.outputs.tags }}
-          CI_PROJECT_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}
-          ENV_VARS: ${{ inputs.env_vars }}
-        run: >
-          env && /usr/bin/docker compose
-          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
-          -f ./spelloom/docker/compose/dev/docker-compose.yml
-          --env-file ${{ inputs.env_file }}
-          up --detach
+      # - name: Update and start Spelloom
+        # env:
+          # IMAGE_NAME: ${{ steps.meta.outputs.tags }}
+          # CI_PROJECT_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          # ENV_VARS: ${{ inputs.env_vars }}
+        # run: >
+          # env && /usr/bin/docker compose
+          # -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          # -f ./spelloom/docker/compose/dev/docker-compose.yml
+          # --env-file ${{ inputs.env_file }}
+          # up --detach
           
   # notify:
   #   runs-on: apifornia-builder
