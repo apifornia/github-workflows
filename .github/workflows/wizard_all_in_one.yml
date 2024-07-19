@@ -138,12 +138,13 @@ jobs:
         run: |
           docker image rm -f ${{ steps.meta-chamber.outputs.tags }} || true
           docker image rm -f ${{ steps.meta-spelloom.outputs.tags }} || true
+
   compose-up:
     needs: [setup,build]
     runs-on: ${{ needs.setup.outputs.RUNNER }}
     strategy:
       matrix:
-        compose_file: ${{ inputs.compose_files }}
+        compose_file: inputs.compose_files
     steps:
       - name: Checkout
         uses: actions/checkout@v3
