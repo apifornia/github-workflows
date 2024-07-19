@@ -160,10 +160,18 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Docker metadata - ${{ matrix.sub_project }}
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ghcr.io/${{ github.repository }}-${{ matrix.sub_project }}
+          tags: |
+            type=raw,value=${{ github.sha }}
 
       - name: Lint and show compose manifest - ${{ matrix.sub_project }}
         env:
-          IMAGE_NAME: ${{ steps.meta-chamber.outputs.tags }}
+          IMAGE_NAME: ${{ steps.meta.outputs.tags }}
           CI_PROJECT_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}
           ENV_VARS: ${{ inputs.env_vars }}
         run: >
@@ -173,17 +181,17 @@ jobs:
           --env-file ${{ inputs.env_file }}
           convert
       
-      # - name: Pre-pull new Docker-image Chamber
-        # env:
-          # IMAGE_NAME: ${{ steps.meta.outputs.tags }}
-          # CI_PROJECT_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}
-          # ENV_VARS: ${{ inputs.env_vars }}
-        # run: >
-          # /usr/bin/docker compose
-          # -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
-          # -f ./chamber/docker/compose/dev/docker-compose.yml
-          # --env-file ${{ inputs.env_file }}
-          # pull --quiet
+      - name: Pre-pull new Docker-image - ${{ matrix.sub_project }}
+        env:
+          IMAGE_NAME: ${{ steps.meta.outputs.tags }}
+          CI_PROJECT_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          ENV_VARS: ${{ inputs.env_vars }}
+        run: >
+          /usr/bin/docker compose
+          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          -f ./${{ matrix.sub_project }}/docker/compose/dev/docker-compose.yml
+          --env-file ${{ inputs.env_file }}
+          pull --quiet
           
       # - name: Pre-pull new Docker-image Spelloom
         # env:
