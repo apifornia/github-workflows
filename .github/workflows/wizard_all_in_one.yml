@@ -94,12 +94,13 @@ jobs:
       
       - name: Start common
         env:
+          CALLER_REPO_NAME: ${{ steps.setup.outputs.CALLER_REPO_NAME }}
           IMAGE_NAME: ${{ steps.meta.outputs.tags }}
           CI_PROJECT_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}
           ENV_VARS: ${{ inputs.env_vars }}
         run: >
-          env && /usr/bin/docker compose
-          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          /usr/bin/docker compose
+          -p ${{ env.CALLER_REPO_NAME }}
           -f ./common/docker/compose/tests/docker-compose.yml
           --env-file ${{ inputs.env_file }}
           up -d
@@ -139,7 +140,7 @@ jobs:
         env:
           IMAGE_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
         run: >
-          env && /usr/bin/docker compose
+          /usr/bin/docker compose
           -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
           -f ./${{ matrix.sub_project }}/docker/compose/dev/docker-compose.yml
           --env-file ${{ inputs.env_file }}
@@ -149,7 +150,7 @@ jobs:
         env:
           IMAGE_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}-tests
         run: >
-          env && /usr/bin/docker compose
+          /usr/bin/docker compose
           -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
           -f ./${{ matrix.sub_project }}/docker/compose/tests/docker-compose.yml
           --env-file ${{ inputs.env_file }}
@@ -173,7 +174,7 @@ jobs:
           IMAGE_NAME: ${{ steps.meta.outputs.tags }}
           ENV_VARS: ${{ inputs.env_vars }}
         run: >
-          env && /usr/bin/docker compose
+          /usr/bin/docker compose
           -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
           -f ./common/docker/compose/tests/docker-compose.yml
           --env-file ${{ inputs.env_file }}
@@ -183,7 +184,7 @@ jobs:
         env:
           IMAGE_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
         run: >
-          env && /usr/bin/docker compose
+          /usr/bin/docker compose
           -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
           -f ./chamber/docker/compose/dev/docker-compose.yml
           --env-file ${{ inputs.env_file }}
@@ -193,7 +194,7 @@ jobs:
         env:
           IMAGE_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
         run: >
-          env && /usr/bin/docker compose
+          /usr/bin/docker compose
           -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
           -f ./spelloom/docker/compose/dev/docker-compose.yml
           --env-file ${{ inputs.env_file }}
