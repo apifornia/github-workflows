@@ -105,7 +105,8 @@ jobs:
     runs-on: apifornia-builder
     strategy:
       matrix:
-        sub_project: [ chamber, spelloom ]
+        #sub_project: [ chamber, spelloom ]
+        sub_project: [ chamber ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
