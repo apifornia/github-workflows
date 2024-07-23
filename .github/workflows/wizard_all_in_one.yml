@@ -59,7 +59,8 @@ jobs:
               echo "ERROR: deployment can't proceed"
               exit 1
             fi
-  build:
+
+  build-common:
     runs-on: apifornia-builder
     needs: setup
     steps:
@@ -71,6 +72,145 @@ jobs:
       - name: Generate .env file
         run: echo "${{ secrets.env_vars }}" > ${{ inputs.env_file }}
       
+      - name: Build Common
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./common/docker/images/dev/Dockerfile
+          push: false
+          tags: wizard-common
+          
+  pre-tests:
+    runs-on: apifornia-builder
+    needs: setup
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Generate .env file
+        run: echo "${{ secrets.env_vars }}" > ${{ inputs.env_file }}
+      
+      - name: Start common
+        env:
+          IMAGE_NAME: ${{ steps.meta.outputs.tags }}
+          CI_PROJECT_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          ENV_VARS: ${{ inputs.env_vars }}
+        run: >
+          env && /usr/bin/docker compose
+          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          -f ./common/docker/compose/tests/docker-compose.yml
+          --env-file ${{ inputs.env_file }}
+          up -d
+          
+  tests:
+    needs: [build-common]
+    runs-on: apifornia-builder
+    strategy:
+      matrix:
+        sub_project: [ chamber, spelloom ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - name: Generate .env file
+        run: echo "${{ secrets.env_vars }}" > ${{ inputs.env_file }}
+         
+      - name: Build - ${{ matrix.sub_project }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./${{ matrix.sub_project }}/docker/images/dev/Dockerfile
+          push: false
+          tags: ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
+      
+      - name: Build tests - ${{ matrix.sub_project }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./${{ matrix.sub_project }}/docker/images/tests/Dockerfile
+          push: false
+          tags: ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}-tests
+         
+      - name: Start - ${{ matrix.sub_project }}
+        env:
+          IMAGE_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
+        run: >
+          env && /usr/bin/docker compose
+          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
+          -f ./${{ matrix.sub_project }}/docker/compose/dev/docker-compose.yml
+          --env-file ${{ inputs.env_file }}
+          up --detach
+          
+      - name: Start test - ${{ matrix.sub_project }}
+        env:
+          IMAGE_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}-tests
+        run: >
+          env && /usr/bin/docker compose
+          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
+          -f ./${{ matrix.sub_project }}/docker/compose/tests/docker-compose.yml
+          --env-file ${{ inputs.env_file }}
+          up
+          
+  post-tests:
+    runs-on: apifornia-builder
+    if: ${{ always() }}
+    needs: tests
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Generate .env file
+        run: echo "${{ secrets.env_vars }}" > ${{ inputs.env_file }}
+      
+      - name: Stop common
+        env:
+          IMAGE_NAME: ${{ steps.meta.outputs.tags }}
+          ENV_VARS: ${{ inputs.env_vars }}
+        run: >
+          env && /usr/bin/docker compose
+          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+          -f ./common/docker/compose/tests/docker-compose.yml
+          --env-file ${{ inputs.env_file }}
+          down
+          
+      - name: Stop - chamber
+        env:
+          IMAGE_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
+        run: >
+          env && /usr/bin/docker compose
+          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
+          -f ./chamber/docker/compose/dev/docker-compose.yml
+          --env-file ${{ inputs.env_file }}
+          down
+          
+      - name: Stop - spelloom
+        env:
+          IMAGE_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
+        run: >
+          env && /usr/bin/docker compose
+          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
+          -f ./spelloom/docker/compose/dev/docker-compose.yml
+          --env-file ${{ inputs.env_file }}
+          down
+
+  push:
+    runs-on: apifornia-builder
+    needs: tests,post-tests
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Generate .env file
+        run: echo "${{ secrets.env_vars }}" > ${{ inputs.env_file }}
+        
       - name: Docker metadata Chamber
         id: meta-chamber
         uses: docker/metadata-action@v4
@@ -88,35 +228,13 @@ jobs:
           tags: |
             type=raw,value=${{ github.sha }}
             type=raw,value=latest
-      
+            
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Build Common
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./common/docker/images/dev/Dockerfile
-          push: false
-          tags: wizard-common
-
-      - name: Build Chamber
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./chamber/docker/images/dev/Dockerfile
-          push: false
-          
-      - name: Build Spelloom
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./spelloom/docker/images/dev/Dockerfile
-          push: false
           
       - name: Push Chamber
         uses: docker/build-push-action@v6
@@ -133,15 +251,15 @@ jobs:
           file: ./spelloom/docker/images/dev/Dockerfile
           push: true
           tags: ${{ steps.meta-spelloom.outputs.tags }}
-
+          
       - name: Cleanup
         run: |
           docker image rm -f ${{ steps.meta-chamber.outputs.tags }} || true
           docker image rm -f ${{ steps.meta-spelloom.outputs.tags }} || true
 
   compose-up:
-    needs: [setup,build]
     runs-on: ${{ needs.setup.outputs.RUNNER }}
+    needs: push
     strategy:
       matrix:
         sub_project: [ chamber, spelloom ]
@@ -172,8 +290,6 @@ jobs:
       - name: Lint and show compose manifest - ${{ matrix.sub_project }}
         env:
           IMAGE_NAME: ${{ steps.meta.outputs.tags }}
-          CI_PROJECT_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}
-          ENV_VARS: ${{ inputs.env_vars }}
         run: >
           /usr/bin/docker compose
           -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
@@ -184,8 +300,6 @@ jobs:
       - name: Pre-pull new Docker-image - ${{ matrix.sub_project }}
         env:
           IMAGE_NAME: ${{ steps.meta.outputs.tags }}
-          CI_PROJECT_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}
-          ENV_VARS: ${{ inputs.env_vars }}
         run: >
           /usr/bin/docker compose
           -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
@@ -196,8 +310,6 @@ jobs:
       - name: Update and start - ${{ matrix.sub_project }}
         env:
           IMAGE_NAME: ${{ steps.meta.outputs.tags }}
-          CI_PROJECT_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}
-          ENV_VARS: ${{ inputs.env_vars }}
         run: >
           env && /usr/bin/docker compose
           -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
