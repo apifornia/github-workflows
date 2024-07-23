@@ -152,9 +152,9 @@ jobs:
           up
           
   post-tests:
-    runs-on: [setup,apifornia-builder]
+    runs-on: apifornia-builder
     if: ${{ always() }}
-    needs: tests
+    needs: [setup,tests]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
