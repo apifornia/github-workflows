@@ -147,7 +147,7 @@ jobs:
           IMAGE_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}-tests
         run: >
           /usr/bin/docker compose
-          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
+          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}-tests
           -f ./${{ matrix.sub_project }}/docker/compose/tests/docker-compose.yml
           --env-file ${{ inputs.env_file }}
           up
