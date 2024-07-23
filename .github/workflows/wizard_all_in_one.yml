@@ -195,6 +195,7 @@ jobs:
   push:
     runs-on: apifornia-builder
     needs: [setup,post-tests]
+    if: ${{ always() }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -253,6 +254,7 @@ jobs:
   compose-up:
     needs: [setup,push]
     runs-on: ${{ needs.setup.outputs.RUNNER }}
+    if: ${{ always() }}
     strategy:
       matrix:
         sub_project: [ chamber, spelloom ]
