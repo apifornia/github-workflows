@@ -78,11 +78,11 @@ jobs:
           context: .
           file: ./common/docker/images/dev/Dockerfile
           push: false
-          tags: wizard-common
+          tags: ${{ needs.setup.outputs.CALLER_REPO_NAME }}-common
           
   pre-tests:
     runs-on: apifornia-builder
-    needs: build-common
+    needs: [setup,build-common]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -95,13 +95,13 @@ jobs:
       - name: Start common
         run: >
           /usr/bin/docker compose
-          -p wizard-tests
+          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}-tests
           -f ./common/docker/compose/tests/docker-compose.yml
           --env-file ${{ inputs.env_file }}
           up -d
           
   tests:
-    needs: pre-tests
+    needs: [setup,pre-tests]
     runs-on: apifornia-builder
     strategy:
       matrix:
@@ -152,7 +152,7 @@ jobs:
           up
           
   post-tests:
-    runs-on: apifornia-builder
+    runs-on: [setup,apifornia-builder]
     if: ${{ always() }}
     needs: tests
     steps:
