@@ -201,7 +201,7 @@ jobs:
 
   push:
     runs-on: apifornia-builder
-    needs: tests,post-tests
+    needs: [tests,post-tests]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
