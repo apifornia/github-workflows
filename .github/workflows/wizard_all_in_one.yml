@@ -199,123 +199,123 @@ jobs:
           --env-file ${{ inputs.env_file }}
           down
 
-  push:
-    runs-on: apifornia-builder
-    needs: [tests,post-tests]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
+  # push:
+    # runs-on: apifornia-builder
+    # needs: [tests,post-tests]
+    # steps:
+      # - name: Checkout
+        # uses: actions/checkout@v4
+        # with:
+          # fetch-depth: 1
 
-      - name: Generate .env file
-        run: echo "${{ secrets.env_vars }}" > ${{ inputs.env_file }}
+      # - name: Generate .env file
+        # run: echo "${{ secrets.env_vars }}" > ${{ inputs.env_file }}
         
-      - name: Docker metadata Chamber
-        id: meta-chamber
-        uses: docker/metadata-action@v4
-        with:
-          images: ghcr.io/${{ github.repository }}-chamber
-          tags: |
-            type=raw,value=${{ github.sha }}
-            type=raw,value=latest
+      # - name: Docker metadata Chamber
+        # id: meta-chamber
+        # uses: docker/metadata-action@v4
+        # with:
+          # images: ghcr.io/${{ github.repository }}-chamber
+          # tags: |
+            # type=raw,value=${{ github.sha }}
+            # type=raw,value=latest
             
-      - name: Docker metadata Spelloom
-        id: meta-spelloom
-        uses: docker/metadata-action@v4
-        with:
-          images: ghcr.io/${{ github.repository }}-spelloom
-          tags: |
-            type=raw,value=${{ github.sha }}
-            type=raw,value=latest
+      # - name: Docker metadata Spelloom
+        # id: meta-spelloom
+        # uses: docker/metadata-action@v4
+        # with:
+          # images: ghcr.io/${{ github.repository }}-spelloom
+          # tags: |
+            # type=raw,value=${{ github.sha }}
+            # type=raw,value=latest
             
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Login to GitHub Container Registry
+        # uses: docker/login-action@v2
+        # with:
+          # registry: ghcr.io
+          # username: ${{ github.actor }}
+          # password: ${{ secrets.GITHUB_TOKEN }}
           
-      - name: Push Chamber
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./chamber/docker/images/dev/Dockerfile
-          push: true
-          tags: ${{ steps.meta-chamber.outputs.tags }}
+      # - name: Push Chamber
+        # uses: docker/build-push-action@v6
+        # with:
+          # context: .
+          # file: ./chamber/docker/images/dev/Dockerfile
+          # push: true
+          # tags: ${{ steps.meta-chamber.outputs.tags }}
           
-      - name: Push Spelloom
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./spelloom/docker/images/dev/Dockerfile
-          push: true
-          tags: ${{ steps.meta-spelloom.outputs.tags }}
+      # - name: Push Spelloom
+        # uses: docker/build-push-action@v6
+        # with:
+          # context: .
+          # file: ./spelloom/docker/images/dev/Dockerfile
+          # push: true
+          # tags: ${{ steps.meta-spelloom.outputs.tags }}
           
-      - name: Cleanup
-        run: |
-          docker image rm -f ${{ steps.meta-chamber.outputs.tags }} || true
-          docker image rm -f ${{ steps.meta-spelloom.outputs.tags }} || true
+      # - name: Cleanup
+        # run: |
+          # docker image rm -f ${{ steps.meta-chamber.outputs.tags }} || true
+          # docker image rm -f ${{ steps.meta-spelloom.outputs.tags }} || true
 
-  compose-up:
-    runs-on: ${{ needs.setup.outputs.RUNNER }}
-    needs: push
-    strategy:
-      matrix:
-        sub_project: [ chamber, spelloom ]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 1
+  # compose-up:
+    # runs-on: ${{ needs.setup.outputs.RUNNER }}
+    # needs: push
+    # strategy:
+      # matrix:
+        # sub_project: [ chamber, spelloom ]
+    # steps:
+      # - name: Checkout
+        # uses: actions/checkout@v3
+        # with:
+          # fetch-depth: 1
 
-      - name: Generate .env file
-        run: echo "${{ secrets.env_vars }}" > ${{ inputs.env_file }}
+      # - name: Generate .env file
+        # run: echo "${{ secrets.env_vars }}" > ${{ inputs.env_file }}
       
-      - name: Login to Container Registry
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Login to Container Registry
+        # uses: docker/login-action@v2
+        # with:
+          # registry: ghcr.io
+          # username: ${{ github.actor }}
+          # password: ${{ secrets.GITHUB_TOKEN }}
           
-      - name: Docker metadata - ${{ matrix.sub_project }}
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          images: ghcr.io/${{ github.repository }}-${{ matrix.sub_project }}
-          tags: |
-            type=raw,value=${{ github.sha }}
+      # - name: Docker metadata - ${{ matrix.sub_project }}
+        # id: meta
+        # uses: docker/metadata-action@v4
+        # with:
+          # images: ghcr.io/${{ github.repository }}-${{ matrix.sub_project }}
+          # tags: |
+            # type=raw,value=${{ github.sha }}
 
-      - name: Lint and show compose manifest - ${{ matrix.sub_project }}
-        env:
-          IMAGE_NAME: ${{ steps.meta.outputs.tags }}
-        run: >
-          /usr/bin/docker compose
-          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
-          -f ./${{ matrix.sub_project }}/docker/compose/dev/docker-compose.yml
-          --env-file ${{ inputs.env_file }}
-          convert
+      # - name: Lint and show compose manifest - ${{ matrix.sub_project }}
+        # env:
+          # IMAGE_NAME: ${{ steps.meta.outputs.tags }}
+        # run: >
+          # /usr/bin/docker compose
+          # -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
+          # -f ./${{ matrix.sub_project }}/docker/compose/dev/docker-compose.yml
+          # --env-file ${{ inputs.env_file }}
+          # convert
       
-      - name: Pre-pull new Docker-image - ${{ matrix.sub_project }}
-        env:
-          IMAGE_NAME: ${{ steps.meta.outputs.tags }}
-        run: >
-          /usr/bin/docker compose
-          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
-          -f ./${{ matrix.sub_project }}/docker/compose/dev/docker-compose.yml
-          --env-file ${{ inputs.env_file }}
-          pull --quiet
+      # - name: Pre-pull new Docker-image - ${{ matrix.sub_project }}
+        # env:
+          # IMAGE_NAME: ${{ steps.meta.outputs.tags }}
+        # run: >
+          # /usr/bin/docker compose
+          # -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
+          # -f ./${{ matrix.sub_project }}/docker/compose/dev/docker-compose.yml
+          # --env-file ${{ inputs.env_file }}
+          # pull --quiet
          
-      - name: Update and start - ${{ matrix.sub_project }}
-        env:
-          IMAGE_NAME: ${{ steps.meta.outputs.tags }}
-        run: >
-          env && /usr/bin/docker compose
-          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
-          -f ./${{ matrix.sub_project }}/docker/compose/dev/docker-compose.yml
-          --env-file ${{ inputs.env_file }}
-          up --detach
+      # - name: Update and start - ${{ matrix.sub_project }}
+        # env:
+          # IMAGE_NAME: ${{ steps.meta.outputs.tags }}
+        # run: >
+          # env && /usr/bin/docker compose
+          # -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
+          # -f ./${{ matrix.sub_project }}/docker/compose/dev/docker-compose.yml
+          # --env-file ${{ inputs.env_file }}
+          # up --detach
 
   # notify:
   #   runs-on: apifornia-builder
