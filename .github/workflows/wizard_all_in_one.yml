@@ -82,7 +82,7 @@ jobs:
           
   pre-tests:
     runs-on: apifornia-builder
-    needs: setup
+    needs: build-common
     steps:
       - name: Checkout
         uses: actions/checkout@v4
