@@ -170,17 +170,17 @@ jobs:
           -p wizard-tests
           -f ./common/docker/compose/tests/docker-compose.yml
           --env-file ${{ inputs.env_file }}
-          down
+          down || true
           
       - name: Stop - chamber
         env:
           IMAGE_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
         run: >
           /usr/bin/docker compose
-          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
+          -p -${{ matrix.sub_project }}
           -f ./chamber/docker/compose/dev/docker-compose.yml
           --env-file ${{ inputs.env_file }}
-          down
+          down || true
           
       - name: Stop - spelloom
         env:
@@ -190,7 +190,7 @@ jobs:
           -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
           -f ./spelloom/docker/compose/dev/docker-compose.yml
           --env-file ${{ inputs.env_file }}
-          down
+          down || true
 
   # push:
     # runs-on: apifornia-builder
