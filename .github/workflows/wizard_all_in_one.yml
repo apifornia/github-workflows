@@ -195,7 +195,7 @@ jobs:
           IMAGE_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
         run: >
           /usr/bin/docker compose
-          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}-chamber
+          -p wizard-chamber
           -f ./chamber/docker/compose/dev/docker-compose.yml
           --env-file ${{ inputs.env_file }}
           down || true
@@ -205,7 +205,7 @@ jobs:
           IMAGE_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
         run: >
           /usr/bin/docker compose
-          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}-spelloom
+          -p wizard-spelloom
           -f ./spelloom/docker/compose/dev/docker-compose.yml
           --env-file ${{ inputs.env_file }}
           down || true
