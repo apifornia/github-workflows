@@ -122,7 +122,7 @@ jobs:
         run: >
           /usr/bin/docker compose
           -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}-chamber
-          -f ./${{ matrix.sub_project }}/docker/compose/dev/docker-compose.yml
+          -f ./chamber/docker/compose/dev/docker-compose.yml
           --env-file ${{ inputs.env_file }}
           up --detach
 
@@ -132,7 +132,7 @@ jobs:
         run: >
           /usr/bin/docker compose
           -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}-spelloom
-          -f ./${{ matrix.sub_project }}/docker/compose/dev/docker-compose.yml
+          -f ./spelloom/docker/compose/dev/docker-compose.yml
           --env-file ${{ inputs.env_file }}
           up --detach
           
