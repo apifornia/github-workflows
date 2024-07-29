@@ -99,6 +99,42 @@ jobs:
           -f ./common/docker/compose/tests/docker-compose.yml
           --env-file ${{ inputs.env_file }}
           up -d
+
+      - name: Build Chamber
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./chamber/docker/images/dev/Dockerfile
+          push: false
+          tags: ${{ needs.setup.outputs.CALLER_REPO_NAME }}-chamber
+
+      - name: Build Spelloom
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./spelloom/docker/images/dev/Dockerfile
+          push: false
+          tags: ${{ needs.setup.outputs.CALLER_REPO_NAME }}-spelloom
+
+      - name: Start Chamber
+        env:
+          IMAGE_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}-chamber
+        run: >
+          /usr/bin/docker compose
+          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}-chamber
+          -f ./${{ matrix.sub_project }}/docker/compose/dev/docker-compose.yml
+          --env-file ${{ inputs.env_file }}
+          up --detach
+
+      - name: Start Spelloom
+        env:
+          IMAGE_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}-spelloom
+        run: >
+          /usr/bin/docker compose
+          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}-spelloom
+          -f ./${{ matrix.sub_project }}/docker/compose/dev/docker-compose.yml
+          --env-file ${{ inputs.env_file }}
+          up --detach
           
   tests:
     needs: [setup,pre-tests]
@@ -114,14 +150,6 @@ jobs:
 
       - name: Generate .env file
         run: echo "${{ secrets.env_vars }}" > ${{ inputs.env_file }}
-         
-      - name: Build - ${{ matrix.sub_project }}
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./${{ matrix.sub_project }}/docker/images/dev/Dockerfile
-          push: false
-          tags: ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
       
       - name: Build tests - ${{ matrix.sub_project }}
         uses: docker/build-push-action@v6
@@ -130,16 +158,6 @@ jobs:
           file: ./${{ matrix.sub_project }}/docker/images/tests/Dockerfile
           push: false
           tags: ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}-tests
-         
-      - name: Start - ${{ matrix.sub_project }}
-        env:
-          IMAGE_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
-        run: >
-          /usr/bin/docker compose
-          -p ${{ needs.setup.outputs.CALLER_REPO_NAME }}-${{ matrix.sub_project }}
-          -f ./${{ matrix.sub_project }}/docker/compose/dev/docker-compose.yml
-          --env-file ${{ inputs.env_file }}
-          up --detach
           
       - name: Start test - ${{ matrix.sub_project }}
         env:
@@ -195,7 +213,6 @@ jobs:
   push:
     runs-on: apifornia-builder
     needs: [setup,post-tests]
-    if: ${{ always() }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -254,7 +271,6 @@ jobs:
   compose-up:
     needs: [setup,push]
     runs-on: ${{ needs.setup.outputs.RUNNER }}
-    if: ${{ always() }}
     strategy:
       matrix:
         sub_project: [ chamber, spelloom ]
