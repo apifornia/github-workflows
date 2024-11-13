@@ -12,7 +12,7 @@ on:
 
 jobs:
   test:
-    runs-on: apifornia-builder
+    runs-on: apifornia-tests
     steps:
       - name: Checkout
         uses: actions/checkout@v3
