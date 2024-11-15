@@ -34,7 +34,14 @@ jobs:
           rm -rf  /tmp/runner/work/cypress_save/ || true && mkdir /tmp/runner/work/cypress_save/
           #docker run --name cypress --env-file	${{ inputs.env }}.env -v $REAL_DOCKER_PATH:/e2e -w /e2e cypress/included:latest
           # docker run --name cypress --env-file	${{ inputs.env }}.env -v $REAL_DOCKER_PATH:/e2e -v /srv/app/apifornia-runners/apifornia-builder/work/cypress_save:/cypress -w /e2e cypress/included:latest  || true
-          docker run --name cypress --env-file	${{ inputs.env }}.env -v $REAL_DOCKER_PATH:/e2e -v /srv/app/apifornia-runners/apifornia-builder/work/cypress_save:/cypress -w /e2e cypress/included:latest --browser  firefox --headless || true
+          docker run \
+            --name cypress \
+            --env-file	${{ inputs.env }}.env \
+            -v $REAL_DOCKER_PATH:/e2e \
+            -v /srv/app/apifornia-runners/apifornia-builder/work/cypress_save:/cypress \
+            -w /e2e cypress/included:latest \
+            --browser  chrome \
+            --headless || true
           docker logs cypress | ansi2html > /tmp/runner/work/cypress_save/log.html
           cp -r ./cypress/screenshots/  /tmp/runner/work/cypress_save/ || true
           EXIT=$(docker inspect cypress --format='{{.State.ExitCode}}')
