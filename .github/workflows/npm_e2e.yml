@@ -29,24 +29,19 @@ jobs:
       - name: Run tests
         run: |
           npm install
-          echo $GITHUB_WORKSPACE
-          env
-          exit 1
-          REAL_DOCKER_PATH=$( echo $GITHUB_WORKSPACE | sed s'/tmp\/runner/srv\/app\/apifornia-runners\/apifornia-builder/')
+          #REAL_DOCKER_PATH=$( echo $GITHUB_WORKSPACE | sed s'/tmp\/runner/srv\/app\/apifornia-runners\/apifornia-builder/')
           # CLEANUP
           docker container rm cypress || true
           rm -rf  /tmp/runner/work/cypress_save/ || true && mkdir /tmp/runner/work/cypress_save/
-          rm -rf /srv/app/apifornia-runners/apifornia-builder/work/cypress_save/*
-          rm -rf $REAL_DOCKER_PATH/*
+          rm -rf ${LOCAL_FOLDER}/work/cypress_save/*
           # RUN TESTS
-          #docker run --name cypress --env-file	${{ inputs.env }}.env -v $REAL_DOCKER_PATH:/e2e -w /e2e cypress/included:latest
-          # docker run --name cypress --env-file	${{ inputs.env }}.env -v $REAL_DOCKER_PATH:/e2e -v /srv/app/apifornia-runners/apifornia-builder/work/cypress_save:/cypress -w /e2e cypress/included:latest  || true
           docker run \
             --name cypress \
             --env-file	${{ inputs.env }}.env \
             -v $REAL_DOCKER_PATH:/e2e \
-            -v /srv/app/apifornia-runners/apifornia-builder/work/cypress_save:/cypress \
-            -w /e2e cypress/included:latest \
+            -v ${LOCAL_FOLDER}/work/cypress_save:/cypress \
+            -w /e2e \
+            cypress/included:latest \
             --browser  firefox \
             --headless || true
           # POST ACTIONS
