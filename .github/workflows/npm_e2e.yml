@@ -30,23 +30,23 @@ jobs:
         run: |
           npm install
           # CLEANUP
-          docker container rm cypress || true
-          rm -rf  /tmp/runner/work/cypress_save/ || true && mkdir /tmp/runner/work/cypress_save/
-          rm -rf ${LOCAL_FOLDER}/work/cypress_save/*
+          docker container rm ${RUNNER_NAME}-cypress || true
+          rm -rf  /tmp/runner/work/${RUNNER_NAME}-cypress_save/ || true && mkdir /tmp/runner/work/${RUNNER_NAME}-cypress_save/
+          rm -rf ${LOCAL_FOLDER}/work/${RUNNER_NAME}-cypress_save/*
           # RUN TESTS
           docker run \
-            --name cypress \
+            --name ${RUNNER_NAME}-cypress \
             --env-file	${{ inputs.env }}.env \
             -v ${LOCAL_FOLDER}/work/watcher/watcher:/e2e \
-            -v ${LOCAL_FOLDER}/work/cypress_save:/cypress \
+            -v ${LOCAL_FOLDER}/work/${RUNNER_NAME}-cypress_save:/cypress \
             -w /e2e \
             cypress/included:latest \
             --browser  firefox \
             --headless || true
           # POST ACTIONS
-          docker logs cypress | ansi2html > /tmp/runner/work/cypress_save/log.html
-          cp -r ./cypress/screenshots/  /tmp/runner/work/cypress_save/ || true
-          EXIT=$(docker inspect cypress --format='{{.State.ExitCode}}')
+          docker logs ${RUNNER_NAME}-cypress | ansi2html > /tmp/runner/work/cypress_save/log.html
+          cp -r ./cypress/screenshots/  /tmp/runner/work/${RUNNER_NAME}-cypress_save/ || true
+          EXIT=$(docker inspect ${RUNNER_NAME}-cypress --format='{{.State.ExitCode}}')
           if [ "$EXIT" != "0" ]; then
             exit 1
           else
