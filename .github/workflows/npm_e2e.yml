@@ -38,7 +38,7 @@ jobs:
           docker run \
             --name cypress \
             --env-file	${{ inputs.env }}.env \
-            -v $REAL_DOCKER_PATH:/e2e \
+            -v ${LOCAL_FOLDER}:/e2e \
             -v ${LOCAL_FOLDER}/work/cypress_save:/cypress \
             -w /e2e \
             cypress/included:latest \
