@@ -30,6 +30,7 @@ jobs:
         run: |
           npm install
           echo $GITHUB_WORKSPACE
+          env
           exit 1
           REAL_DOCKER_PATH=$( echo $GITHUB_WORKSPACE | sed s'/tmp\/runner/srv\/app\/apifornia-runners\/apifornia-builder/')
           # CLEANUP
