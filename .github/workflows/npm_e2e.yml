@@ -29,7 +29,6 @@ jobs:
       - name: Run tests
         run: |
           npm install
-          #REAL_DOCKER_PATH=$( echo $GITHUB_WORKSPACE | sed s'/tmp\/runner/srv\/app\/apifornia-runners\/apifornia-builder/')
           # CLEANUP
           docker container rm cypress || true
           rm -rf  /tmp/runner/work/cypress_save/ || true && mkdir /tmp/runner/work/cypress_save/
@@ -38,7 +37,7 @@ jobs:
           docker run \
             --name cypress \
             --env-file	${{ inputs.env }}.env \
-            -v ${LOCAL_FOLDER}:/e2e \
+            -v ${LOCAL_FOLDER}/work/watcher/watcher/cypress/e2e:/e2e \
             -v ${LOCAL_FOLDER}/work/cypress_save:/cypress \
             -w /e2e \
             cypress/included:latest \
