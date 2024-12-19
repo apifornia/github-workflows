@@ -34,7 +34,7 @@ jobs:
           docker container rm ${RUNNER_NAME}-cypress || true
           rm -rf  /tmp/runner/work/${RUNNER_NAME}-cypress_save/ || true && mkdir /tmp/runner/work/${RUNNER_NAME}-cypress_save/
           rm -rf ${LOCAL_FOLDER}/work/${RUNNER_NAME}-cypress_save/* || true
-		      rm -rf /tmp/runner/work/cypress_save/* || true
+          rm -rf /tmp/runner/work/cypress_save/* || true
           # RUN TESTS
           docker run \
             --name ${RUNNER_NAME}-cypress \
