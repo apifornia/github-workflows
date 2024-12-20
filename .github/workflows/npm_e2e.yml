@@ -37,7 +37,6 @@ jobs:
             --name ${RUNNER_NAME}-cypress \
             --env-file	${{ inputs.env }}.env \
             -v ${LOCAL_FOLDER}/work/watcher/watcher:/e2e \
-            -v ${LOCAL_FOLDER}/work/${RUNNER_NAME}-cypress_save:/cypress \
             -w /e2e \
             cypress/included:latest \
             --browser  firefox \
