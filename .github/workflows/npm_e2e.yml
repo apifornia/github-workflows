@@ -26,15 +26,13 @@ jobs:
       - name: Generate .env file
         run: echo "${{ secrets.dev }}" > dev.env && echo "${{ secrets.prod }}" > prod.env
 
-
       - name: Run tests
         run: |
           npm install
           # CLEANUP
           docker container rm ${RUNNER_NAME}-cypress || true
-          rm -rf  /tmp/runner/work/${RUNNER_NAME}-cypress_save/ || true && mkdir /tmp/runner/work/${RUNNER_NAME}-cypress_save/
+          rm -rf  /tmp/${RUNNER_NAME}/work/cypress_save/ || true && mkdir -p /tmp/${RUNNER_NAME}/work/cypress_save/ || true
           rm -rf ${LOCAL_FOLDER}/work/${RUNNER_NAME}-cypress_save/* || true
-          rm -rf /tmp/runner/work/cypress_save/* || true
           # RUN TESTS
           docker run \
             --name ${RUNNER_NAME}-cypress \
@@ -46,8 +44,8 @@ jobs:
             --browser  firefox \
             --headless || true
           # POST ACTIONS
-          docker logs ${RUNNER_NAME}-cypress | ansi2html > /tmp/runner/work/cypress_save/log.html
-          cp -r ./cypress/screenshots/  /tmp/runner/work/${RUNNER_NAME}-cypress_save/ || true
+          docker logs ${RUNNER_NAME}-cypress | ansi2html > /tmp/${RUNNER_NAME}/work/cypress_save/log.html
+          cp -r ./cypress/screenshots/  /tmp/${RUNNER_NAME}/work/cypress_save/ || true
           EXIT=$(docker inspect ${RUNNER_NAME}-cypress --format='{{.State.ExitCode}}')
           if [ "$EXIT" != "0" ]; then
             exit 1
