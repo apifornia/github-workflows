@@ -31,7 +31,7 @@ jobs:
           npm install
           # CLEANUP
           docker container rm ${RUNNER_NAME}-cypress || true
-          rm -rf  /tmp/${RUNNER_NAME}/work/cypress_save/ || true && mkdir -p /tmp/${RUNNER_NAME}/work/cypress_save/ || true
+          rm -rf  /tmp/runner/work/${RUNNER_NAME}-cypress_save/ || true && mkdir -p /tmp/runner/work/${RUNNER_NAME}-cypress_save/ || true
           rm -rf ${LOCAL_FOLDER}/work/${RUNNER_NAME}-cypress_save/* || true
           # RUN TESTS
           docker run \
@@ -44,8 +44,8 @@ jobs:
             --browser  firefox \
             --headless || true
           # POST ACTIONS
-          docker logs ${RUNNER_NAME}-cypress | ansi2html > /tmp/${RUNNER_NAME}/work/cypress_save/log.html
-          cp -r ./cypress/screenshots/  /tmp/${RUNNER_NAME}/work/cypress_save/ || true
+          docker logs ${RUNNER_NAME}-cypress | ansi2html > /tmp/runner/work/${RUNNER_NAME}-cypress_save/log.html
+          cp -r ./cypress/screenshots/  /tmp/runner/work/${RUNNER_NAME}-cypress_save/ || true
           EXIT=$(docker inspect ${RUNNER_NAME}-cypress --format='{{.State.ExitCode}}')
           if [ "$EXIT" != "0" ]; then
             exit 1
