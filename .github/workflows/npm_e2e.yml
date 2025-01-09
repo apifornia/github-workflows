@@ -28,8 +28,6 @@ jobs:
 
       - name: Run tests
         run: |
-          ls -lah
-          exit 1
           npm install
           # CLEANUP
           docker container rm ${RUNNER_NAME}-cypress || true
@@ -45,6 +43,7 @@ jobs:
             --headless || true
           # POST ACTIONS
           docker logs ${RUNNER_NAME}-cypress | ansi2html > /tmp/runner/work/cypress_save/log.html
+          docker logs ${RUNNER_NAME}-cypress > /tmp/runner/work/cypress_save/log.txt
           cp -r ./cypress/screenshots/  /tmp/runner/work/cypress_save/ || true
           EXIT=$(docker inspect ${RUNNER_NAME}-cypress --format='{{.State.ExitCode}}')
           if [ "$EXIT" != "0" ]; then
