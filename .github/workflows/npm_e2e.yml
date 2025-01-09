@@ -49,7 +49,7 @@ jobs:
           # POST ACTIONS
           docker logs ${RUNNER_NAME}-cypress | ansi2html > /tmp/runner/work/cypress_save/log.html
           docker logs ${RUNNER_NAME}-cypress > /tmp/runner/work/cypress_save/log.txt
-          python3 getmsg.py /tmp/runner/work/cypress_save/log.txt > /tmp/runner/work/cypress_save/failing_flow.txt
+          python3 getmsg.py /tmp/runner/work/cypress_save/log.txt > /tmp/runner/work/cypress_save/failing_flow.txt || true
           cp -r ./cypress/screenshots/ /tmp/runner/work/cypress_save/ || true
           EXIT=$(docker inspect ${RUNNER_NAME}-cypress --format='{{.State.ExitCode}}')
           if [ "$EXIT" != "0" ]; then
