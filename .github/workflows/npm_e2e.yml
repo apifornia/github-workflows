@@ -4,6 +4,9 @@ on:
       env:
         type: string
         required: true
+      runs-on:
+        type: string
+        required: true
     secrets:
       dev:
         required: false
@@ -12,8 +15,7 @@ on:
 
 jobs:
   test:
-    outputs:
-      FAILING_FLOW: ${{ steps.tests.outputs.FAILING_FLOW }}
+    runs-on: ${{ inputs.runs-on }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
