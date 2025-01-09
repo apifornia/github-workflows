@@ -28,6 +28,7 @@ jobs:
 
       - name: Run tests
         run: |
+          env && exit 1
           npm install
           # CLEANUP
           docker container rm ${RUNNER_NAME}-cypress || true
