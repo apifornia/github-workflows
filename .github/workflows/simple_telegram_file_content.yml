@@ -22,4 +22,4 @@ jobs:
       - id: sendDocument
         name: Send Telegram File
         run: |
-          MESSAGE=$(cat ${{ inputs.path_to_file }} | sed -z 's/\n/%0A/g') curl -X POST -d chat_id="${{ secrets.tg_channel }}" -d disable_web_page_preview=true -d text="$MESSAGE" -d parse_mode=HTML -d disable_web_page_preview=true https://api.telegram.org/bot${{ secrets.tg_bot }}/sendMessage || true
+          curl -X POST -d chat_id="${{ secrets.tg_channel }}" -d disable_web_page_preview=true -d text=$(echo -n \" && cat ${{ inputs.path_to_file }} | sed -z 's/\n/%0A/g' && echo -n \") -d parse_mode=HTML -d disable_web_page_preview=true https://api.telegram.org/bot${{ secrets.tg_bot }}/sendMessage || true
