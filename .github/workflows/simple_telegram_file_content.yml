@@ -22,4 +22,4 @@ jobs:
       - id: sendDocument
         name: Send Telegram File
         run: |
-          cat ${{ inputs.path_to_file }} && TELEGRAM_MESSAGE=$(cat ${{ inputs.path_to_file }}) curl -X POST -d text="$TELEGRAM_MESSAGE" -d parse_mode=HTML https://api.telegram.org/bot${{ secrets.tg_bot }}/sendMessage || true
+          TELEGRAM_MESSAGE=$(cat ${{ inputs.path_to_file }}) curl -X POST -d chat_id="${{ secrets.tg_channel }}" -d disable_web_page_preview=true -d text="$TELEGRAM_MESSAGE" -d parse_mode=HTML -d disable_web_page_preview=true https://api.telegram.org/bot${{ secrets.tg_bot }}/sendMessage || true
