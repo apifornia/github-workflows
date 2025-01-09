@@ -12,6 +12,8 @@ on:
 
 jobs:
   test:
+    outputs:
+      FAILING_FLOW: ${{ steps.tests.outputs.FAILING_FLOW }}
     runs-on: apifornia-builder
     steps:
       - name: Checkout
@@ -26,9 +28,9 @@ jobs:
       - name: Generate .env file
         run: echo "${{ secrets.dev }}" > dev.env && echo "${{ secrets.prod }}" > prod.env
 
-      - name: Run tests
+      - id: tests
+        name: Run tests
         run: |
-          env && exit 1
           npm install
           # CLEANUP
           docker container rm ${RUNNER_NAME}-cypress || true
@@ -38,6 +40,7 @@ jobs:
             --name ${RUNNER_NAME}-cypress \
             --env-file	${{ inputs.env }}.env \
             -v ${LOCAL_FOLDER}/work/watcher/watcher:/e2e \
+            -v /srv/app/apifornia-runners/shared:/shared \
             -w /e2e \
             cypress/included:latest \
             --browser  firefox \
@@ -45,7 +48,7 @@ jobs:
           # POST ACTIONS
           docker logs ${RUNNER_NAME}-cypress | ansi2html > /tmp/runner/work/cypress_save/log.html
           docker logs ${RUNNER_NAME}-cypress > /tmp/runner/work/cypress_save/log.txt
-          python3 getmsg.py /tmp/runner/work/cypress_save/log.txt > /tmp/runner/work/cypress_save/failing_flow.txt
+          python3 getmsg.py /tmp/runner/work/cypress_save/log.txt > /shared/failing_flow.txt
           cp -r ./cypress/screenshots/  /tmp/runner/work/cypress_save/ || true
           EXIT=$(docker inspect ${RUNNER_NAME}-cypress --format='{{.State.ExitCode}}')
           if [ "$EXIT" != "0" ]; then
