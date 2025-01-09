@@ -1,0 +1,25 @@
+on:
+  workflow_call:
+    inputs:
+      runs_on:
+        type: string
+        default: 'apifornia-builder'
+        required: false
+      path_to_file:
+        type: string
+        default: ''
+        required: true
+    secrets:
+      tg_bot:
+        required: true
+      tg_channel:
+        required: true
+
+jobs:
+  telegram:
+    runs-on: ${{ inputs.runs_on }}
+    steps:
+      - id: sendDocument
+        name: Send Telegram File
+        run: |
+          export CONTENT=$(cat ${{ inputs.path_to_file }} | sed -z 's/\n/%0A/g' | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g' ) && curl -X POST -d chat_id="${{ secrets.tg_channel }}" -d disable_web_page_preview=true -d text="$CONTENT" -d parse_mode=HTML -d disable_web_page_preview=true https://api.telegram.org/bot${{ secrets.tg_bot }}/sendMessage || true

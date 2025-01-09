@@ -4,6 +4,10 @@ on:
       env:
         type: string
         required: true
+      runs_on:
+        type: string
+        default: 'apifornia-builder'
+        required: true
     secrets:
       dev:
         required: false
@@ -12,7 +16,7 @@ on:
 
 jobs:
   test:
-    runs-on: apifornia-builder
+    runs-on: ${{ inputs.runs_on }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -26,7 +30,8 @@ jobs:
       - name: Generate .env file
         run: echo "${{ secrets.dev }}" > dev.env && echo "${{ secrets.prod }}" > prod.env
 
-      - name: Run tests
+      - id: tests
+        name: Run tests
         run: |
           npm install
           # CLEANUP
@@ -43,7 +48,9 @@ jobs:
             --headless || true
           # POST ACTIONS
           docker logs ${RUNNER_NAME}-cypress | ansi2html > /tmp/runner/work/cypress_save/log.html
-          cp -r ./cypress/screenshots/  /tmp/runner/work/cypress_save/ || true
+          docker logs ${RUNNER_NAME}-cypress > /tmp/runner/work/cypress_save/log.txt
+          python3 getmsg.py /tmp/runner/work/cypress_save/log.txt > /tmp/runner/work/cypress_save/failing_flow.txt || true
+          cp -r ./cypress/screenshots/ /tmp/runner/work/cypress_save/ || true
           EXIT=$(docker inspect ${RUNNER_NAME}-cypress --format='{{.State.ExitCode}}')
           if [ "$EXIT" != "0" ]; then
             exit 1
