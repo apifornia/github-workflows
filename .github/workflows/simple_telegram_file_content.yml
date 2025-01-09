@@ -1,0 +1,25 @@
+on:
+  workflow_call:
+    inputs:
+      runs_on:
+        type: string
+        default: 'apifornia-builder'
+        required: false
+      path_to_file:
+        type: string
+        default: ''
+        required: true
+    secrets:
+      tg_bot:
+        required: true
+      tg_channel:
+        required: true
+
+jobs:
+  telegram:
+    runs-on: ${{ inputs.runs_on }}
+    steps:
+      - id: sendDocument
+        name: Send Telegram File
+        run: |
+          TELEGRAM_MESSAGE=$$(cat "${{ inputs.path_to_file }}") curl -X POST -d text="$TELEGRAM_MESSAGE" -d parse_mode=HTML https://api.telegram.org/bot${{ secrets.tg_bot }}/sendMessage || true
