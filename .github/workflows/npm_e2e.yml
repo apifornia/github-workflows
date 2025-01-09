@@ -14,7 +14,7 @@ jobs:
   test:
     outputs:
       FAILING_FLOW: ${{ steps.tests.outputs.FAILING_FLOW }}
-    runs-on: apifornia-builder
+    runs-on: apifornia-github-runner1
     steps:
       - name: Checkout
         uses: actions/checkout@v3
