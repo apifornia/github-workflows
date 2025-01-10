@@ -53,6 +53,20 @@ jobs:
           cp -r ./cypress/screenshots/ /tmp/runner/work/cypress_save/ || true
           echo "====cypress====="
           ls ./cypress/**
+
+          # Find files with commas and rename them
+          find "/tmp/runner/work/cypress_save/" -type f -name "*,*" | while read -r file; do
+              # Get the directory and filename
+              dir=$(dirname "$file")
+              base=$(basename "$file")
+              
+              # Replace commas with underscores in the filename
+              new_base=$(echo "$base" | sed 's/,/_/g')
+              
+              # Rename the file
+              mv "$file" "$dir/$new_base"
+          done
+
           echo "====save====="
           ls /tmp/runner/work/cypress_save/**
           EXIT=$(docker inspect ${RUNNER_NAME}-cypress --format='{{.State.ExitCode}}')
