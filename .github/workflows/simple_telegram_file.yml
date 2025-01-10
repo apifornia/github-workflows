@@ -3,15 +3,15 @@ on:
     inputs:
       runs_on:
         type: string
-        default: 'apifornia-builder'
+        default: "apifornia-builder"
         required: false
       folder:
         type: string
-        default: ''
+        default: ""
         required: true
       file:
         type: string
-        default: ''
+        default: ""
         required: true
     secrets:
       tg_bot:
@@ -26,4 +26,5 @@ jobs:
       - id: sendDocument
         name: Send Telegram File
         run: |
+          find ${{ inputs.folder }} -name "${{ inputs.file }}"
           find ${{ inputs.folder }} -name "${{ inputs.file }}" -exec curl -X POST -F document=@"{}" https://api.telegram.org/bot${{ secrets.tg_bot }}/sendDocument?chat_id=${{ secrets.tg_channel }} \; || true
