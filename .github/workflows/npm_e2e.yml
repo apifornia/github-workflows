@@ -6,7 +6,7 @@ on:
         required: true
       runs_on:
         type: string
-        default: 'apifornia-builder'
+        default: "apifornia-builder"
         required: true
     secrets:
       dev:
@@ -51,6 +51,10 @@ jobs:
           docker logs ${RUNNER_NAME}-cypress > /tmp/runner/work/cypress_save/log.txt
           python3 getmsg.py /tmp/runner/work/cypress_save/log.txt > /tmp/runner/work/cypress_save/failing_flow.txt || true
           cp -r ./cypress/screenshots/ /tmp/runner/work/cypress_save/ || true
+          echo "====cypress====="
+          ls ./cypress/**
+          echo "====save====="
+          ls /tmp/runner/work/cypress_save/**
           EXIT=$(docker inspect ${RUNNER_NAME}-cypress --format='{{.State.ExitCode}}')
           if [ "$EXIT" != "0" ]; then
             exit 1
