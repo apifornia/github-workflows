@@ -5,6 +5,9 @@ on:
         required: true
 
 jobs:
+  # =====
+  # SETUP
+  # =====
   setup:
     runs-on: apifornia-builder
     outputs:
@@ -24,7 +27,10 @@ jobs:
             echo "CALLER_REPO_NAME=${REPOSITORY_NAME[1]}" >> $GITHUB_OUTPUT
             echo "PR_NUMBER=${REF_NAME[0]}" >> $GITHUB_OUTPUT
             echo "PR_ID=pr-${REPOSITORY_NAME[1]}-${REF_NAME[0]}" >> $GITHUB_OUTPUT
-
+  
+  # ================
+  # INFRA deployment
+  # ================
   infra:
     needs: [setup]
     runs-on: apifornia-builder
@@ -58,7 +64,10 @@ jobs:
           
           echo Starting service
           docker compose up -d
-
+  
+  # ===============
+  # APPS deployment
+  # ===============
   apps:
     needs: [setup,infra]
     runs-on: apifornia-builder
@@ -108,7 +117,10 @@ jobs:
 #          - flow-core
 #          - worker-rust
 #          - wizard
-
+  
+  # ============
+  # APPS cleanup
+  # ============
   wipe-apps:
     needs: [setup,infra,apps]
     if: ${{ always() }}
@@ -141,6 +153,9 @@ jobs:
           echo Cleanup ${{ matrix.app }}
           docker compose down || true
 
+  # =============
+  # INFRA cleanup
+  # =============
   wipe-infra:
     needs: [setup,infra,apps,wipe-apps]
     if: ${{ always() }}
