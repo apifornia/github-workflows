@@ -40,7 +40,7 @@ jobs:
           repository: apifornia/infrastructure
           ref: main
           path: pr
-          token: ${{ secret.gh_token }}
+          token: ${{ secrets.gh_token }}
       - name: Update and run ${{ matrix.app }}
         run: |
           echo ${{ matrix.app }}
