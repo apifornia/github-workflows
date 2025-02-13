@@ -76,7 +76,7 @@ jobs:
           echo app: ${{ matrix.app }}
           cd docker/compose/dev
           pwd
-          Get env vars:
+          echo Get env vars:
           echo  "${{ secrets.gh_token }}" | gh auth login --with-token
           gh variable get PR --repo apifornia/flow-editor-vue3 > .env
           ls -lah
