@@ -1,10 +1,8 @@
 on:
   workflow_call:
-    inputs:
-      token:
-        type: string
-        default: ''
-        required: false
+    secrets:
+      gh_token:
+        required: true
 
 jobs:
   setup:
@@ -39,8 +37,10 @@ jobs:
       - name: Clone infra
         uses: actions/checkout@v4
         with:
-          repository: 'apifornia/infrastructure'
-          ref: 'main'
+          repository: apifornia/infrastructure
+          ref: main
+          path: pr
+          token: ${{ secret.gh_token }}
       - name: Update and run ${{ matrix.app }}
         run: |
           echo ${{ matrix.app }}
