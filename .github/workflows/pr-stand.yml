@@ -39,7 +39,7 @@ jobs:
       - name: Clone infra
         uses: actions/checkout@v4
         with:
-          repository: 'https://github.com/apifornia/infrastructure.git'
+          repository: 'apifornia/infrastructure'
       - name: Update and run ${{ matrix.app }}
         run: |
           echo ${{ matrix.app }}
