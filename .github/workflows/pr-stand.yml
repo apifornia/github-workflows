@@ -94,7 +94,7 @@ jobs:
           
           echo Get env vars:
           echo  "${{ secrets.gh_token }}" | gh auth login --with-token
-          gh variable get PR --repo apifornia/flow-editor-vue3 > .env
+          gh variable get PR --repo apifornia/${{ matrix.app }} > .env
           ls -lah
 
           echo Setting unique id
@@ -145,7 +145,7 @@ jobs:
           
           echo Get env vars:
           echo  "${{ secrets.gh_token }}" | gh auth login --with-token
-          gh variable get PR --repo apifornia/flow-editor-vue3 > .env
+          gh variable get PR --repo apifornia/${{ matrix.app }} > .env
           ls -lah
           
           echo Setting unique id
