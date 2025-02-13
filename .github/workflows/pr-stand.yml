@@ -37,10 +37,10 @@ jobs:
           - redis
     steps:
       - name: Clone infra
-        uses: actions/setup-node@v4
+        uses: actions/checkout@v4
         with:
           repository: 'https://github.com/apifornia/infrastructure.git'
-      - name: Update and run ${{ matrix.app }}
+      - name: Update and run: ${{ matrix.app }}
         run: |
           echo ${{ matrix.app }}
           ls -lah
