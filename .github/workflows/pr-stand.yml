@@ -9,16 +9,38 @@ on:
 jobs:
   setup:
     runs-on: apifornia-builder
-#    strategy:
-#      matrix:
-#        apps: [10, 12, 14]
+    outputs:
+      CALLER_REPO_NAME: ${{ steps.setup.outputs.CALLER_REPO_NAME }}
+      PR_NUMBER: ${{ steps.setup.outputs.CALLER_REPO_NAME }}
     steps:
       - id: setup
         name: Configuration setup
         run: |
             env
+            echo ======================================
             REPOSITORY_NAME=(${GITHUB_REPOSITORY//\// })
             REF_NAME=(${GITHUB_REF_NAME//\// })
-            echo ${REPOSITORY_NAME[1]}
-            echo ${REF_NAME[0]}
-            echo "CALLER_REPO_NAME=${split[1]}" >> $GITHUB_OUTPUT
+            echo Caller repo: ${REPOSITORY_NAME[1]}
+            echo PR number: ${REF_NAME[0]}
+            echo "CALLER_REPO_NAME=${REPOSITORY_NAME[1]}" >> $GITHUB_OUTPUT
+            echo "PR_NUMBER=${REF_NAME[0]}" >> $GITHUB_OUTPUT
+
+  infrastructure:
+    needs: [setup]
+    runs-on: apifornia-builder
+    strategy:
+      matrix:
+        app:
+          - kafka
+          - mongo
+          - postgres
+          - redis
+    steps:
+      - name: Clone infra
+        uses: actions/setup-node@v4
+        with:
+          repository: 'https://github.com/apifornia/infrastructure.git'
+      - name: Update and run ${{ matrix.app }}
+        run: |
+          echo ${{ matrix.app }}
+          ls -lah
