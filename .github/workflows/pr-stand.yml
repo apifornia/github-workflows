@@ -1,1 +1,17 @@
-#tbd
+on:
+  workflow_call:
+    inputs:
+      token:
+        type: string
+        default: ''
+        required: false
+
+
+jobs:
+  setup:
+    runs-on: apifornia-builder
+    steps:
+      - id: setup
+        name: Configuration setup
+        run: |
+            env
