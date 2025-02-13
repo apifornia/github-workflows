@@ -107,22 +107,19 @@ jobs:
           echo Starting service
           docker compose up -d
 
-#  tests:
-#    needs: [setup,infra,apps]
-#    runs-on: apifornia-builder
-#    strategy:
-#      matrix:
-#        app:
-#          - flow-editor-vue3
-#          - flow-core
-#          - worker-rust
-#          - wizard
+  tests:
+    needs: [setup,infra,apps]
+    runs-on: apifornia-builder
+    steps:
+      - name: Wait 1 min
+        run: |
+          sleep 1m
   
   # ============
   # APPS cleanup
   # ============
   wipe-apps:
-    needs: [setup,infra,apps]
+    needs: [setup,infra,apps,tests]
     if: ${{ always() }}
     runs-on: apifornia-builder
     strategy:
@@ -161,7 +158,7 @@ jobs:
   # INFRA cleanup
   # =============
   wipe-infra:
-    needs: [setup,infra,apps,wipe-apps]
+    needs: [setup,infra,apps,tests,wipe-apps]
     if: ${{ always() }}
     runs-on: apifornia-builder
     strategy:
