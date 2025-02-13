@@ -39,10 +39,9 @@ jobs:
         with:
           repository: apifornia/infrastructure
           ref: main
-          filter: pr/${{ matrix.app }}
           token: ${{ secrets.gh_token }}
       - name: Update and run ${{ matrix.app }}
         run: |
           echo ${{ matrix.app }}
-          cd pr/${{ matrix.app }}
+          cd docker-compose/pr/${{ matrix.app }}
           ls -lah
