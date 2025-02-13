@@ -126,7 +126,7 @@ jobs:
           docker compose down || true
 
   wipe-infra:
-    needs: [setup,infra]
+    needs: [setup,infra,apps,wipe-apps]
     if: ${{ always() }}
     runs-on: apifornia-builder
     strategy:
