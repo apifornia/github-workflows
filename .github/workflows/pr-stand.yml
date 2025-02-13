@@ -6,15 +6,19 @@ on:
         default: ''
         required: false
 
-
 jobs:
   setup:
     runs-on: apifornia-builder
+#    strategy:
+#      matrix:
+#        apps: [10, 12, 14]
     steps:
       - id: setup
         name: Configuration setup
         run: |
             env
-            split=(${GITHUB_REPOSITORY//\// })
-            echo ${split[1]}
+            REPOSITORY_NAME=(${GITHUB_REPOSITORY//\// })
+            REF_NAME=(${GITHUB_REF_NAME//\// })
+            echo ${REPOSITORY_NAME[1]}
+            echo ${REF_NAME[0]}
             echo "CALLER_REPO_NAME=${split[1]}" >> $GITHUB_OUTPUT
