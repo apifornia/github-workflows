@@ -23,7 +23,7 @@ jobs:
             echo "CALLER_REPO_NAME=${REPOSITORY_NAME[1]}" >> $GITHUB_OUTPUT
             echo "PR_NUMBER=${REF_NAME[0]}" >> $GITHUB_OUTPUT
 
-  infrastructure:
+  infra:
     needs: [setup]
     runs-on: apifornia-builder
     strategy:
@@ -39,7 +39,7 @@ jobs:
         with:
           repository: apifornia/infrastructure
           ref: main
-          path: pr
+          filter: pr/${{ matrix.app }}
           token: ${{ secrets.gh_token }}
       - name: Update and run ${{ matrix.app }}
         run: |
