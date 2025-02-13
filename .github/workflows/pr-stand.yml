@@ -10,6 +10,7 @@ jobs:
     outputs:
       CALLER_REPO_NAME: ${{ steps.setup.outputs.CALLER_REPO_NAME }}
       PR_NUMBER: ${{ steps.setup.outputs.PR_NUMBER }}
+      PR_ID: ${{ steps.setup.outputs.PR_ID }}
     steps:
       - id: setup
         name: Configuration setup
@@ -22,6 +23,7 @@ jobs:
             echo PR number: ${REF_NAME[0]}
             echo "CALLER_REPO_NAME=${REPOSITORY_NAME[1]}" >> $GITHUB_OUTPUT
             echo "PR_NUMBER=${REF_NAME[0]}" >> $GITHUB_OUTPUT
+            echo "PR_ID=pr-${REPOSITORY_NAME[1]}-${REF_NAME[0]}" >> $GITHUB_OUTPUT
 
   infra:
     needs: [setup]
@@ -46,7 +48,7 @@ jobs:
           cd docker-compose/pr/${{ matrix.app }}
           pwd
           ls -lah
-          sed -i 's/<pr-id>/pr-${{ needs.setup.outputs.PR_NUMBER }}-${{ needs.setup.outputs.CALLER_REPO_NAME }}/' docker-compose.yml
+          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' docker-compose.yml
           echo Removing old containers
           docker compose down || true
           echo Starting service
@@ -145,6 +147,6 @@ jobs:
           cd docker-compose/pr/${{ matrix.app }}
           pwd
           ls -lah
-          sed -i 's/<pr-id>/pr-${{ needs.setup.outputs.PR_NUMBER }}-${{ needs.setup.outputs.CALLER_REPO_NAME }}/' docker-compose.yml
+          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' docker-compose.yml
           echo Cleanup
           docker compose down || true
