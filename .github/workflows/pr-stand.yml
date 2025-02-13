@@ -67,7 +67,7 @@ jobs:
         app:
           - flow-editor-vue3
           - flow-core
-          - worker-rust
+          #- worker-rust
           #- wizard
     steps:
       - name: Clone ${{ matrix.app }}
@@ -118,7 +118,7 @@ jobs:
         app:
           - flow-editor-vue3
           - flow-core
-          - worker-rust
+          #- worker-rust
           #- wizard
     steps:
       - name: Clone ${{ matrix.app }}
