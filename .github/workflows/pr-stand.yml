@@ -41,11 +41,12 @@ jobs:
         with:
           repository: apifornia/infrastructure
           ref: main
+          path: ${{ matrix.app }}
           token: ${{ secrets.gh_token }}
       - name: Update and run ${{ matrix.app }}
         run: |
           echo app: ${{ matrix.app }}
-          cd docker-compose/pr/${{ matrix.app }}
+          cd ${{ matrix.app }}/docker-compose/pr/${{ matrix.app }}
           pwd
           ls -lah
           
@@ -74,11 +75,12 @@ jobs:
         with:
           repository: apifornia/${{ matrix.app }}
           ref: main
+          path: ${{ matrix.app }}
           token: ${{ secrets.gh_token }}
       - name: Update and run ${{ matrix.app }}
         run: |
           echo app: ${{ matrix.app }}
-          cd docker/compose/dev
+          cd ${{ matrix.app }}/docker/compose/dev
           pwd
           
           echo Get env vars:
@@ -123,11 +125,12 @@ jobs:
         with:
           repository: apifornia/${{ matrix.app }}
           ref: main
+          path: ${{ matrix.app }}
           token: ${{ secrets.gh_token }}
       - name: Update and run ${{ matrix.app }}
         run: |
           echo app: ${{ matrix.app }}
-          cd docker/compose/dev
+          cd ${{ matrix.app }}/docker/compose/dev
           pwd
           ls -lah
           
@@ -154,11 +157,12 @@ jobs:
         with:
           repository: apifornia/infrastructure
           ref: main
+          path: ${{ matrix.app }}
           token: ${{ secrets.gh_token }}
       - name: Cleanup ${{ matrix.app }}
         run: |
           echo app: ${{ matrix.app }}
-          cd docker-compose/pr/${{ matrix.app }}
+          cd ${{ matrix.app }}/docker-compose/pr/${{ matrix.app }}
           pwd
           ls -lah
           
