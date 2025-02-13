@@ -93,7 +93,7 @@ jobs:
           echo Removing old containers
           docker compose down || true
           
-          Starting service
+          echo Starting service
           docker compose up -d
 
 #  tests:
