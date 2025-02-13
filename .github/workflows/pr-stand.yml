@@ -15,3 +15,6 @@ jobs:
         name: Configuration setup
         run: |
             env
+            split=(${GITHUB_REPOSITORY//\// })
+            echo ${split[1]}
+            echo "CALLER_REPO_NAME=${split[1]}" >> $GITHUB_OUTPUT
