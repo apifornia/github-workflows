@@ -83,7 +83,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: apifornia/${{ matrix.app }}
-          #ref: main
+          ref: pr
           path: ${{ matrix.app }}
           token: ${{ secrets.gh_token }}
       - name: Update and run ${{ matrix.app }}
@@ -137,7 +137,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: apifornia/${{ matrix.app }}
-          #ref: main
+          ref: pr
           path: ${{ matrix.app }}
           token: ${{ secrets.gh_token }}
       - name: Update and run ${{ matrix.app }}
