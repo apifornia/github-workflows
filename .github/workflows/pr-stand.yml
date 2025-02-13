@@ -47,3 +47,5 @@ jobs:
           pwd
           ls -lah
           sed -i 's/<pr-id>/pr-1-test/' docker-compose.yml
+          cat docker-compose.yml
+          docker compose up -d
