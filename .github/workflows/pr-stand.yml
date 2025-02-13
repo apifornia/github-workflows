@@ -111,6 +111,7 @@ jobs:
 
   wipe-apps:
     needs: [setup,infra,apps]
+    if: ${{ always() }}
     runs-on: $RUNS_ON
     strategy:
       matrix:
