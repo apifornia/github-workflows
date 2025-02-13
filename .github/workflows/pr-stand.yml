@@ -138,7 +138,7 @@ jobs:
           echo Setting unique id
           sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' docker-compose.yml
           
-          Cleanup ${{ matrix.app }}
+          echo Cleanup ${{ matrix.app }}
           docker compose down || true
 
   wipe-infra:
