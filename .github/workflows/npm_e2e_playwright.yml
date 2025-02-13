@@ -1,0 +1,77 @@
+on:
+  workflow_call:
+    inputs:
+      env:
+        type: string
+        required: true
+      runs_on:
+        type: string
+        default: "apifornia-builder"
+        required: true
+    secrets:
+      dev:
+        required: false
+      prod:
+        required: false
+
+jobs:
+  test:
+    runs-on: ${{ inputs.runs_on }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Generate .env file
+        run: echo "${{ secrets.dev }}" > dev.env && echo "${{ secrets.prod }}" > prod.env
+
+      - id: tests
+        name: Run tests
+        run: |
+          npm install
+          # CLEANUP
+          docker container rm ${RUNNER_NAME}-playwright || true
+          rm -rf /tmp/runner/work/playwright_save/ || true && mkdir -p /tmp/runner/work/playwright_save/ || true
+          # RUN TESTS
+          docker run \
+            --name ${RUNNER_NAME}-playwright \
+            --env-file	${{ inputs.env }}.env \
+            -v ${LOCAL_FOLDER}/work/watcher/watcher:/e2e \
+            -w /e2e \
+            playwright/included:latest \
+            --browser  firefox \
+            --headless || true
+          # POST ACTIONS
+          docker logs ${RUNNER_NAME}-playwright | ansi2html > /tmp/runner/work/playwright_save/log.html
+          docker logs ${RUNNER_NAME}-playwright > /tmp/runner/work/playwright_save/log.txt
+          # python3 getmsg.py /tmp/runner/work/playwright_save/log.txt > /tmp/runner/work/playwright_save/failing_flow.txt || true
+          cp -r ./playwright/screenshots/ /tmp/runner/work/playwright_save/ || true
+          echo "====playwright====="
+          ls ./playwright/**
+
+          # Find files with commas and rename them
+          find "/tmp/runner/work/playwright_save/" -type f -name "*,*" | while read -r file; do
+              # Get the directory and filename
+              dir=$(dirname "$file")
+              base=$(basename "$file")
+              
+              # Replace commas with underscores in the filename
+              new_base=$(echo "$base" | sed 's/,/_/g')
+              
+              # Rename the file
+              mv "$file" "$dir/$new_base"
+          done
+
+          echo "====save====="
+          ls /tmp/runner/work/playwright_save/**
+          EXIT=$(docker inspect ${RUNNER_NAME}-playwright --format='{{.State.ExitCode}}')
+          if [ "$EXIT" != "0" ]; then
+            exit 1
+          else
+            exit 0
+          fi
