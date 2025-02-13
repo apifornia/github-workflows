@@ -89,7 +89,7 @@ jobs:
       - name: Update and run ${{ matrix.app }}
         run: |
           echo app: ${{ matrix.app }}
-          cd ${{ matrix.app }}/docker/compose/dev
+          cd ${{ matrix.app }}/docker/compose/pr
           pwd
           
           echo Get env vars:
@@ -143,7 +143,7 @@ jobs:
       - name: Update and run ${{ matrix.app }}
         run: |
           echo app: ${{ matrix.app }}
-          cd ${{ matrix.app }}/docker/compose/dev
+          cd ${{ matrix.app }}/docker/compose/pr
           pwd
           ls -lah
           
