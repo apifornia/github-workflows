@@ -67,7 +67,7 @@ jobs:
           - flow-editor-vue3
           - flow-core
           - worker-rust
-          - wizard
+          #- wizard
     steps:
       - name: Clone ${{ matrix.app }}
         uses: actions/checkout@v4
