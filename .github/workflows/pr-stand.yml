@@ -4,12 +4,9 @@ on:
       gh_token:
         required: true
 
-env:
-  RUNS_ON: 'apifornia-builder' 
-
 jobs:
   setup:
-    runs-on: env.RUNS_ON
+    runs-on: apifornia-builder
     outputs:
       CALLER_REPO_NAME: ${{ steps.setup.outputs.CALLER_REPO_NAME }}
       PR_NUMBER: ${{ steps.setup.outputs.PR_NUMBER }}
@@ -28,7 +25,7 @@ jobs:
 
   infra:
     needs: [setup]
-    runs-on: env.RUNS_ON
+    runs-on: apifornia-builder
     strategy:
       matrix:
         app:
@@ -57,7 +54,7 @@ jobs:
 
 #  apps:
 #    needs: [setup,infra]
-#    runs-on: env.RUNS_ON
+#    runs-on: apifornia-builder
 #    strategy:
 #      matrix:
 #        app:
@@ -86,7 +83,7 @@ jobs:
 
 #  tests:
 #    needs: [setup,infra,apps]
-#    runs-on: env.RUNS_ON
+#    runs-on: apifornia-builder
 #    strategy:
 #      matrix:
 #        app:
@@ -127,7 +124,7 @@ jobs:
   wipe-infra:
     needs: [setup,infra]
     if: ${{ always() }}
-    runs-on: env.RUNS_ON
+    runs-on: apifornia-builder
     strategy:
       matrix:
         app:
