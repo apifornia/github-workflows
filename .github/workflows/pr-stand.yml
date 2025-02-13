@@ -140,7 +140,7 @@ jobs:
           ref: pr
           path: ${{ matrix.app }}
           token: ${{ secrets.gh_token }}
-      - name: Update and run ${{ matrix.app }}
+      - name: Cleanup ${{ matrix.app }}
         run: |
           echo app: ${{ matrix.app }}
           cd ${{ matrix.app }}/docker/compose/pr
