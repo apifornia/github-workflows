@@ -75,9 +75,15 @@ jobs:
       matrix:
         app:
           - flow-editor-vue3
+            folder: ./deploy/pr
           - flow-core
-          #- worker-rust
+            folder: ./deploy/pr
+          - worker-rust
+            folder: ./deploy/pr
           #- wizard
+            #folder: ./chamber/deploy/pr
+          #- wizard
+            #folder: ./spelloom/deploy/pr
     steps:
       - name: Clone ${{ matrix.app }}
         uses: actions/checkout@v4
@@ -127,7 +133,7 @@ jobs:
         app:
           - flow-editor-vue3
           - flow-core
-          #- worker-rust
+          - worker-rust
           #- wizard
     steps:
       - name: Clone ${{ matrix.app }}
