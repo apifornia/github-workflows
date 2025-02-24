@@ -107,7 +107,8 @@ jobs:
         run: |
           echo app: ${{ matrix.app }}
           echo folder: ${{ matrix.app }}
-          echo suffix: ${{ matrix.app }}
+          echo suffix: ${{ matrix.suffix }}
+          echo =============================================
           cd ${{ matrix.app }}_${{ matrix.suffix }}/${{ matrix.folder }}
           pwd
           
@@ -120,7 +121,7 @@ jobs:
           sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' docker-compose.yml
           sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' .env
           
-          echo Removing old containers
+          echo Removing old containers (error = ok)
           docker compose down || true
           
           echo Starting service
@@ -142,6 +143,7 @@ jobs:
     if: ${{ always() }}
     runs-on: apifornia-builder
     strategy:
+      max-parallel: 1
       matrix:
         include:
           - app: flow-editor-vue3
@@ -176,6 +178,9 @@ jobs:
       - name: Cleanup ${{ matrix.app }}
         run: |
           echo app: ${{ matrix.app }}
+          echo folder: ${{ matrix.app }}
+          echo suffix: ${{ matrix.suffix }}
+          echo =============================================
           cd ${{ matrix.app }}_${{ matrix.suffix }}/${{ matrix.folder }}
           pwd
           
