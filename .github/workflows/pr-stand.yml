@@ -75,9 +75,6 @@ jobs:
       max-parallel: 1
       matrix:
         include:
-          - app: flow-editor-vue3
-            folder: docker/compose/pr
-            suffix: _
           - app: flow-core
             folder: docker/compose/pr
             suffix: _
@@ -90,6 +87,9 @@ jobs:
           - app: wizard
             folder: spelloom/docker/compose/pr
             suffix: spelloom
+          - app: flow-editor-vue3
+            folder: docker/compose/pr
+            suffix: _
     steps:
       - name: Clone ${{ matrix.app }}
         uses: actions/checkout@v4
@@ -148,9 +148,6 @@ jobs:
       #max-parallel: 1
       matrix:
         include:
-          - app: flow-editor-vue3
-            folder: docker/compose/pr
-            suffix: _
           - app: flow-core
             folder: docker/compose/pr
             suffix: _
@@ -163,6 +160,9 @@ jobs:
           - app: wizard
             folder: spelloom/docker/compose/pr
             suffix: spelloom
+          - app: flow-editor-vue3
+            folder: docker/compose/pr
+            suffix: _
     steps:
       - name: Clone ${{ matrix.app }}
         uses: actions/checkout@v4
