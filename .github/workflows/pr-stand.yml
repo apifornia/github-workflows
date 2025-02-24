@@ -104,6 +104,7 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+          logout: false
       - name: Update and run ${{ matrix.app }}
         run: |
           echo app: ${{ matrix.app }}
