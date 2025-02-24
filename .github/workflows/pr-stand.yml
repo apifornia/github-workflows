@@ -145,7 +145,7 @@ jobs:
     if: ${{ always() }}
     runs-on: apifornia-builder
     strategy:
-      max-parallel: 1
+      #max-parallel: 1
       matrix:
         include:
           - app: flow-editor-vue3
