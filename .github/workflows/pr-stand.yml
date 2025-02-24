@@ -72,6 +72,7 @@ jobs:
     needs: [setup,infra]
     runs-on: apifornia-builder
     strategy:
+      max-parallel: 1
       matrix:
         include:
           - app: flow-editor-vue3
