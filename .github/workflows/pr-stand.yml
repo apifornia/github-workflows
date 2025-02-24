@@ -100,6 +100,9 @@ jobs:
       - name: Update and run ${{ matrix.app }}
         run: |
           echo app: ${{ matrix.app }}
+          echo folder: ${{ matrix.app }}
+          echo suffix: ${{ matrix.app }}
+          ls -lah
           cd ${{ matrix.app }}_${{ matrix.suffix }}/${{ matrix.folder }}
           pwd
           
