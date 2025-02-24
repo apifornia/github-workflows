@@ -75,19 +75,19 @@ jobs:
       matrix:
         include:
           - app: flow-editor-vue3
-            folder: deploy/compose/pr
+            folder: docker/compose/pr
             suffix: _
           - app: flow-core
-            folder: deploy/compose/pr
+            folder: docker/compose/pr
             suffix: _
           - app: worker-rust
-            folder: deploy/compose/pr
+            folder: docker/compose/pr
             suffix: _
           - app: wizard
-            folder: chamber/deploy/compose/pr
+            folder: chamber/docker/compose/pr
             suffix: chamber
           - app: wizard
-            folder: spelloom/deploy/compose/pr
+            folder: spelloom/docker/compose/pr
             suffix: spelloom
     steps:
       - name: Clone ${{ matrix.app }}
@@ -139,19 +139,19 @@ jobs:
       matrix:
         include:
           - app: flow-editor-vue3
-            folder: deploy/compose/pr
+            folder: docker/compose/pr
             suffix: _
           - app: flow-core
-            folder: deploy/compose/pr
+            folder: docker/compose/pr
             suffix: _
           - app: worker-rust
-            folder: deploy/compose/pr
+            folder: docker/compose/pr
             suffix: _
           - app: wizard
-            folder: chamber/deploy/compose/pr
+            folder: chamber/docker/compose/pr
             suffix: chamber
           - app: wizard
-            folder: spelloom/deploy/compose/pr
+            folder: spelloom/docker/compose/pr
             suffix: spelloom
     steps:
       - name: Clone ${{ matrix.app }}
