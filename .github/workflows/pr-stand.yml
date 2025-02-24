@@ -121,7 +121,9 @@ jobs:
 
           echo Setting unique id
           sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' docker-compose.yml
+          cat docker-compose.yml
           sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' .env
+          cat .env
           
           echo Removing old containers
           docker compose down || true
