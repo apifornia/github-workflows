@@ -98,13 +98,6 @@ jobs:
           ref: pr
           path: ${{ matrix.app }}_${{ matrix.suffix }}
           token: ${{ secrets.gh_token }}
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          logout: false
       - name: Update and run ${{ matrix.app }}
         run: |
           echo app: ${{ matrix.app }}
@@ -174,12 +167,6 @@ jobs:
           ref: pr
           path: ${{ matrix.app }}_${{ matrix.suffix }}
           token: ${{ secrets.gh_token }}
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Cleanup ${{ matrix.app }}
         run: |
           echo app: ${{ matrix.app }}
