@@ -73,13 +73,13 @@ jobs:
     runs-on: apifornia-builder
     strategy:
       matrix:
-        app:
-          - flow-editor-vue3
-            env:"FOLDER=./deploy/pr"
-          - flow-core
-            env:"FOLDER=./deploy/pr"
-          - worker-rust
-            env:"FOLDER=./deploy/pr"
+        include:
+          - app: flow-editor-vue3
+            folder: ./deploy/pr
+          - app: flow-core
+            folder: ./deploy/pr
+          - app: worker-rust
+            folder: ./deploy/pr
           #- wizard
             #folder: ./chamber/deploy/pr
           #- wizard
@@ -131,9 +131,12 @@ jobs:
     strategy:
       matrix:
         app:
-          - flow-editor-vue3
-          - flow-core
-          - worker-rust
+          - app: flow-editor-vue3
+            folder: ./deploy/pr
+          - app: flow-core
+            folder: ./deploy/pr
+          - app: worker-rust
+            folder: ./deploy/pr
           #- wizard
     steps:
       - name: Clone ${{ matrix.app }}
