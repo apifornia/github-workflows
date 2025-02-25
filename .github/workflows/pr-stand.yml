@@ -14,19 +14,30 @@ jobs:
       CALLER_REPO_NAME: ${{ steps.setup.outputs.CALLER_REPO_NAME }}
       PR_NUMBER: ${{ steps.setup.outputs.PR_NUMBER }}
       PR_ID: ${{ steps.setup.outputs.PR_ID }}
+      TEST_USER: ${{ steps.setup.outputs.TEST_USER }}
+      TEST_PASSWORD: ${{ steps.setup.outputs.TEST_PASSWORD }}
     steps:
       - id: setup
         name: Configuration setup
         run: |
             env
             echo ======================================
+            
             REPOSITORY_NAME=(${GITHUB_REPOSITORY//\// })
             REF_NAME=(${GITHUB_REF_NAME//\// })
+            TEST_USER=(user_$((1 + $RANDOM % 10000))@test.net)
+            TEST_PASSWORD=(tr -dc 'A-Za-z0-9!?%=' < /dev/urandom | head -c 20)
+            
             echo Caller repo: ${REPOSITORY_NAME[1]}
             echo PR number: ${REF_NAME[0]}
+            echo Test user: $TEST_USER
+            echo Password: $TEST_PASSWORD
+            
             echo "CALLER_REPO_NAME=${REPOSITORY_NAME[1]}" >> $GITHUB_OUTPUT
             echo "PR_NUMBER=${REF_NAME[0]}" >> $GITHUB_OUTPUT
             echo "PR_ID=pr-${REPOSITORY_NAME[1]}-${REF_NAME[0]}" >> $GITHUB_OUTPUT
+            echo "TEST_USER=${TEST_USER}" >> $GITHUB_OUTPUT
+            echo "TEST_PASSWORD=${TEST_PASSWORD}" >> $GITHUB_OUTPUT
   
   # ================
   # INFRA deployment
@@ -133,6 +144,10 @@ jobs:
     needs: [setup,infra,apps]
     runs-on: apifornia-builder
     steps:
+      - name: Create user
+        run: |
+          docker run --rm --network private  curlimages/curl:latest \
+          curl -v -X POST 'http://${{ needs.setup.outputs.PR_ID }}-flow-core:3002/auth/register' -H 'Content-Type: application/json' -d '{"email": "${{ needs.setup.outputs.TEST_USER }}","password": "${{ needs.setup.outputs.TEST_PASSWORD }}"}'
       - name: Wait 1 min
         run: |
           pwd
