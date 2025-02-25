@@ -135,7 +135,16 @@ jobs:
     steps:
       - name: Wait 1 min
         run: |
-          sleep 1m
+          pwd
+          while :
+          do 
+            if [[ -e ./stop.txt ]]; then
+              echo "Exiting"
+              exit 0
+            fi
+            echo "Waiting for stop.txt"
+            sleep 1m
+          done
   
   # ============
   # APPS cleanup
