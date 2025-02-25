@@ -153,7 +153,7 @@ jobs:
               sleep 1m
               # 1st user. won't be able to login. BUG
               docker run --rm --network private curlimages/curl:latest \
-                curl -v -X POST 'http://${{ needs.setup.outputs.PR_ID }}-flow-core:3002/auth/register' -H 'Content-Type: application/json' -d '{"email": "123_${{ needs.setup.outputs.TEST_USER }}","password": "${{ needs.setup.outputs.TEST_PASSWORD }}"}'
+                curl -v -X POST 'http://${{ needs.setup.outputs.PR_ID }}-flow-core:3002/auth/register' -H 'Content-Type: application/json' -d '{"email": "dummy_${{ needs.setup.outputs.TEST_USER }}","password": "${{ needs.setup.outputs.TEST_PASSWORD }}"}'
               docker run --rm --network private curlimages/curl:latest \
                 curl -v -X POST 'http://${{ needs.setup.outputs.PR_ID }}-flow-core:3002/auth/register' -H 'Content-Type: application/json' -d '{"email": "${{ needs.setup.outputs.TEST_USER }}","password": "${{ needs.setup.outputs.TEST_PASSWORD }}"}'
               exit 0
