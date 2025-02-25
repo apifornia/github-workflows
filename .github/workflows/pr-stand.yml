@@ -140,6 +140,7 @@ jobs:
           do 
             if [[ -e ./stop.txt ]]; then
               echo "Exiting"
+              rm stop.txt
               exit 0
             fi
             echo "Waiting for stop.txt"
