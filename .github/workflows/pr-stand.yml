@@ -71,7 +71,7 @@ jobs:
           sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' docker-compose.yml
           
           echo Removing old containers
-          docker compose down || true
+          docker compose down -v || true
           
           echo Starting service
           docker compose up -d
@@ -134,7 +134,7 @@ jobs:
           sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' .env
           
           echo Removing old containers
-          docker compose down || true
+          docker compose down -v || true
           
           echo Starting service
           docker compose pull
@@ -220,7 +220,7 @@ jobs:
           sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' docker-compose.yml
           
           echo Cleanup ${{ matrix.app }}
-          docker compose down || true
+          docker compose down -v || true
 
   # =============
   # INFRA cleanup
@@ -255,4 +255,4 @@ jobs:
           sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' docker-compose.yml
           
           echo Cleanup ${{ matrix.app }}
-          docker compose down || true
+          docker compose down -v || true
