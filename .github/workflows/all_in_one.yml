@@ -13,6 +13,14 @@ on:
         type: string
         default: 'docker/compose/dev/.env'
         required: false
+      do_build:
+        type: boolean
+        default: true
+        required: false
+      do_deploy:
+        type: boolean
+        default: true
+        required: false
     secrets:
       env_vars:
         required: false
@@ -61,6 +69,7 @@ jobs:
             fi
   build:
     runs-on: apifornia-builder
+    if: "${{ github.event.inputs.do_build == true }}"
     needs: setup
     steps:
       - name: Checkout
@@ -98,9 +107,10 @@ jobs:
       - name: Cleanup
         run: |
           docker image rm -f ${{ steps.meta.outputs.tags }} || true
-  compose-up:
+  deploy:
     needs: [setup,build]
     runs-on: ${{ needs.setup.outputs.RUNNER }}
+    if: "${{ github.event.inputs.do_deploy == true }}"
     steps:
       - name: Checkout
         uses: actions/checkout@v3
