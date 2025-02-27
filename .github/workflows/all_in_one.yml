@@ -60,7 +60,7 @@ jobs:
                 OK="yes"
               fi
               # to delete
-              if [ ${GITHUB_REF_NAME} == 'test' ]; then
+              if [ ${GITHUB_REF_NAME} == 'master' ]; then
                 echo "TAG=dev" >> $GITHUB_OUTPUT
                 echo "RUNNER=apifornia-dev" >> $GITHUB_OUTPUT
                 OK="yes"
