@@ -75,7 +75,7 @@ jobs:
             fi
   build:
     runs-on: apifornia-builder
-    if: "${{ github.event.inputs.do_build == true }}"
+    if: "${{ inputs.do_build == true }}"
     needs: setup
     steps:
       - name: Checkout
@@ -116,7 +116,7 @@ jobs:
   deploy:
     needs: [setup,build]
     runs-on: ${{ needs.setup.outputs.RUNNER }}
-    if: "${{ github.event.inputs.do_deploy == true }}"
+    if: "${{ inputs.do_deploy == true }}"
     steps:
       - name: Checkout
         uses: actions/checkout@v3
