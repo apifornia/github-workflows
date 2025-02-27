@@ -32,7 +32,7 @@ jobs:
       CALLER_REPO_NAME: ${{ steps.setup.outputs.CALLER_REPO_NAME }}
       RUNNER: ${{ steps.setup.outputs.RUNNER }}
       TAG: ${{ steps.setup.outputs.TAG }}
-      BASE_DOMAIN: ${{ steps.setup.outputs.BASE_DOMAIN }}
+      #BASE_DOMAIN: ${{ steps.setup.outputs.BASE_DOMAIN }}
     steps:
       - id: setup
         name: Configuration setup
@@ -187,15 +187,16 @@ jobs:
     if: ${{ always() }}
     needs: [setup,build,deploy]
     outputs:
-      CALLER_REPO_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}
-      RUNNER: ${{ needs.setup.outputs.RUNNER }}
-      TAG: ${{ needs.setup.outputs.TAG }}
-      BASE_DOMAIN: ${{ needs.setup.outputs.BASE_DOMAIN }}
+      CALLER_REPO_NAME: ${{ steps.outputs.outputs.CALLER_REPO_NAME }}
+      RUNNER: ${{ steps.outputs.outputs.RUNNER }}
+      TAG: ${{ steps.outputs.outputs.TAG }}
     steps:
       - id: out
         name: Generate outputs
         run: |
-          echo "XXX=YYY" >> $GITHUB_OUTPUT
+          echo "CALLER_REPO_NAME=${{ needs.setup.outputs.CALLER_REPO_NAME }}" >> $GITHUB_OUTPUT
+          echo "RUNNER=${{ needs.setup.outputs.RUNNER }}" >> $GITHUB_OUTPUT
+          echo "TAG=${{ needs.setup.outputs.TAG }}" >> $GITHUB_OUTPUT
 
 
   # notify:
