@@ -21,6 +21,11 @@ on:
         type: boolean
         default: true
         required: false
+    outputs:
+      app:
+        value: ${{ jobs.setup.outputs.CALLER_REPO_NAME }}
+      tag:
+        value: ${{ jobs.setup.outputs.TAG }}
     secrets:
       env_vars:
         required: false
@@ -183,26 +188,6 @@ jobs:
           -f ${{ inputs.compose_file }}
           --env-file ${{ inputs.env_file }}
           up --detach
-
-  outputs:
-    runs-on: apifornia-builder
-    if: ${{ always() }}
-    needs: [setup,build,deploy]
-    outputs:
-      #CALLER_REPO_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}
-      #TAG: ${{ needs.setup.outputs.TAG }}
-      CALLER_REPO_NAME: CALLER_REPO_NAME
-      TAG: TAG
-    steps:
-      - id: out
-        name: Generate outputs
-        run: |
-          echo CALLER_REPO_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}
-          echo TAG: ${{ needs.setup.outputs.TAG }}
-          #echo "CALLER_REPO_NAME=${{ needs.setup.outputs.CALLER_REPO_NAME }}" >> $GITHUB_OUTPUT
-          #echo "RUNNER=${{ needs.setup.outputs.RUNNER }}" >> $GITHUB_OUTPUT
-          #echo "TAG=${{ needs.setup.outputs.TAG }}" >> $GITHUB_OUTPUT
-
 
   # notify:
   #   runs-on: apifornia-builder
