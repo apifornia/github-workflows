@@ -155,12 +155,13 @@ jobs:
   # ======
   # TESTS
   # ======
-#  tests:
-#    needs: [setup,infra,apps]
-#    runs-on: apifornia-builder
-#    steps:
-#      - name: Create user
-#        run: |
+  tests:
+    needs: [setup,infra,apps]
+    runs-on: apifornia-builder
+    steps:
+      - name: Create user
+        run: |
+          echo OK <- to delete
 #          while :
 #          do
 #            if [[ $(docker run -v --rm --network private curlimages/curl:latest curl -LI http://${{ needs.setup.outputs.PR_ID }}-flow-core:3002 -o /dev/null -w '%{http_code}\n' -s) == "404" ]]; then
