@@ -59,12 +59,15 @@ jobs:
                 echo "RUNNER=apifornia-dev" >> $GITHUB_OUTPUT
                 OK="yes"
               fi
+              #=================================================\/
               # to delete
+              #=================================================
               if [ ${GITHUB_REF_NAME} == 'pr' ]; then
                 echo "TAG=dev" >> $GITHUB_OUTPUT
                 echo "RUNNER=apifornia-dev" >> $GITHUB_OUTPUT
                 OK="yes"
               fi
+              #=================================================/\
             fi
 
             if [ ${OK} == 'yes' ]; then
@@ -73,6 +76,7 @@ jobs:
               echo "ERROR: deployment can't proceed"
               exit 1
             fi
+
   build:
     runs-on: apifornia-builder
     if: "${{ inputs.do_build == true }}"
@@ -113,6 +117,7 @@ jobs:
       - name: Cleanup
         run: |
           docker image rm -f ${{ steps.meta.outputs.tags }} || true
+
   deploy:
     needs: [setup,build]
     runs-on: ${{ needs.setup.outputs.RUNNER }}
@@ -176,6 +181,7 @@ jobs:
           -f ${{ inputs.compose_file }}
           --env-file ${{ inputs.env_file }}
           up --detach
+
   # notify:
   #   runs-on: apifornia-builder
   # deploy-lint:
