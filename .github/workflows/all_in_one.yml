@@ -187,9 +187,9 @@ jobs:
     if: ${{ always() }}
     needs: [setup,build,deploy]
     outputs:
-      CALLER_REPO_NAME: ${{ steps.outputs.outputs.CALLER_REPO_NAME }}
-      RUNNER: ${{ steps.outputs.outputs.RUNNER }}
-      TAG: ${{ steps.outputs.outputs.TAG }}
+      CALLER_REPO_NAME: ${{ steps.out.outputs.CALLER_REPO_NAME }}
+      RUNNER: ${{ steps.out.outputs.RUNNER }}
+      TAG: ${{ steps.out.outputs.TAG }}
     steps:
       - id: out
         name: Generate outputs
