@@ -87,7 +87,7 @@ jobs:
           
           echo Starting service
           docker compose up -d
-  
+
   # ===============
   # APPS deployment
   # ===============
@@ -151,6 +151,7 @@ jobs:
           echo Starting service
           docker compose pull
           docker compose up -d
+
   # ======
   # TESTS
   # ======
