@@ -161,6 +161,12 @@ jobs:
             echo "Waiting for stop.txt"
             sleep 1m
           done
+      - name: E2E tests dev
+        uses: apifornia/github-workflows/.github/workflows/npm_e2e.yml@main
+        with:
+          env: dev
+        #secrets:
+          #dev: ${{ vars.DEV }}
       - name: Wait
         run: |
           pwd
