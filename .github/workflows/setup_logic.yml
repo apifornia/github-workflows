@@ -25,23 +25,39 @@ jobs:
             
             # check if this is a PR or not
             if [ ${GITHUB_EVENT_NAME} == 'pull_request' ]; then
+              
               STRATEGY="PR-based"
+              
               PR_N=$(echo "$GITHUB_REF_NAME" | awk -F / '{print $1}')
+
+              EXTRA_TAG=pr-${split[1]}-${PR_N}
               echo "EXTRA_TAG=pr-${split[1]}-${PR_N}" >> $GITHUB_OUTPUT
+              
+              DEPLOY_RUNNER=apifornia-dev
               echo "DEPLOY_RUNNER=apifornia-dev" >> $GITHUB_OUTPUT
+              
               OK="yes"
             else
               # okay not a PR
               # TAG based deployment ?
               if [ ${GITHUB_REF_TYPE} == 'tag' ]; then
+                
                 STRATEGY="tag-based"
+
                 if [ ${GITHUB_REF_NAME} == 'dev' ]; then
+                  EXTRA_TAG=dev
                   echo "EXTRA_TAG=dev" >> $GITHUB_OUTPUT
+
+                  DEPLOY_RUNNER=apifornia-dev
                   echo "DEPLOY_RUNNER=apifornia-dev" >> $GITHUB_OUTPUT
+                  
                   OK="yes"
                 fi
                 if [ ${GITHUB_REF_NAME} == 'prod' ]; then
+                  EXTRA_TAG=dev
                   echo "EXTRA_TAG=dev" >> $GITHUB_OUTPUT
+                  DEPLOY_RUNNER=apifornia-prod
+
                   echo "DEPLOY_RUNNER=apifornia-prod" >> $GITHUB_OUTPUT
                   OK="yes"
                 fi
@@ -49,10 +65,16 @@ jobs:
               
               # BRANCH based deployment ?
               if [ ${GITHUB_REF_TYPE} == 'branch' ]; then
+                
                 STRATEGY="branch-based"
+                
                 if [ ${GITHUB_REF_NAME} == 'develop' ]; then
+                  EXTRA_TAG=dev
                   echo "EXTRA_TAG=dev" >> $GITHUB_OUTPUT
+                  
+                  DEPLOY_RUNNER=apifornia-dev
                   echo "DEPLOY_RUNNER=apifornia-dev" >> $GITHUB_OUTPUT
+
                   OK="yes"
                 fi
                 #=================================================\/
@@ -70,8 +92,8 @@ jobs:
             if [ ${OK} == 'yes' ]; then
               echo "All good"
               echo "Strategy: ${STRATEGY}"
-              echo "Extra tag: ..."
-              echo "Runner: ..."
+              echo "Extra tag: ${EXTRA_TAG}"
+              echo "Runner: ${DEPLOY_RUNNER}"
             else
               echo "==========================================================================================="
               echo "ERROR: Unfortunately pr/tag/branch logic failed to selected needed deploy strategy and tag"
