@@ -33,7 +33,6 @@ jobs:
               echo "EXTRA_TAG=${EXTRA_TAG}" >> $GITHUB_OUTPUT
               DEPLOY_RUNNER="apifornia-dev"
               echo "DEPLOY_RUNNER=${DEPLOY_RUNNER}" >> $GITHUB_OUTPUT
-              
               OK="yes"
             else
               # okay not a PR
