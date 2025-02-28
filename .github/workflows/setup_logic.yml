@@ -1,0 +1,74 @@
+on:
+  workflow_call:
+    outputs:
+      CALLER_REPO_NAME:
+        value: ${{ jobs.setup.outputs.CALLER_REPO_NAME }}
+      DEPLOY_RUNNER:
+        value: ${{ jobs.setup.outputs.DEPLOY_RUNNER }}
+      EXTRA_TAG:
+        value: ${{ jobs.setup.outputs.EXTRA_TAG }}
+
+jobs:
+  setup:
+    runs-on: apifornia-builder
+    outputs:
+      CALLER_REPO_NAME: ${{ steps.setup.outputs.CALLER_REPO_NAME }}
+      DEPLOY_RUNNER: ${{ steps.setup.outputs.RUNNER }}
+      EXTRA_TAG: ${{ steps.setup.outputs.TAG }}
+    steps:
+      - id: setup
+        name: Deploy and Tag logic
+        run: |
+            split=(${GITHUB_REPOSITORY//\// })
+            
+            echo "CALLER_REPO_NAME=${split[1]}" >> $GITHUB_OUTPUT
+            
+            # check if this is a PR or not
+            if [ ${GITHUB_EVENT_NAME} == 'pull_request' ]; then
+              PR_N=$(echo "$GITHUB_REF_NAME" | awk -F / '{print $1}')
+              echo "EXTRA_TAG=pr-${split[1]}-${PR_N}" >> $GITHUB_OUTPUT
+              echo "DEPLOY_RUNNER=apifornia-dev" >> $GITHUB_OUTPUT
+              OK="yes"
+            else
+              # okay not a PR
+              # TAG based deployment ?
+              if [ ${GITHUB_REF_TYPE} == 'tag' ]; then
+                if [ ${GITHUB_REF_NAME} == 'dev' ]; then
+                  echo "EXTRA_TAG=dev" >> $GITHUB_OUTPUT
+                  echo "DEPLOY_RUNNER=apifornia-dev" >> $GITHUB_OUTPUT
+                  OK="yes"
+                fi
+                if [ ${GITHUB_REF_NAME} == 'prod' ]; then
+                  echo "EXTRA_TAG=dev" >> $GITHUB_OUTPUT
+                  echo "DEPLOY_RUNNER=apifornia-prod" >> $GITHUB_OUTPUT
+                  OK="yes"
+                fi
+              fi
+              
+              # BRANCH based deployment ?
+              if [ ${GITHUB_REF_TYPE} == 'branch' ]; then
+                if [ ${GITHUB_REF_NAME} == 'develop' ]; then
+                  echo "EXTRA_TAG=dev" >> $GITHUB_OUTPUT
+                  echo "DEPLOY_RUNNER=apifornia-dev" >> $GITHUB_OUTPUT
+                  OK="yes"
+                fi
+                #=================================================\/
+                # to delete
+                #=================================================
+                if [ ${GITHUB_REF_NAME} == 'pr' ]; then
+                  echo "EXTRA_TAG=dev" >> $GITHUB_OUTPUT
+                  echo "DEPLOY_RUNNER=apifornia-dev" >> $GITHUB_OUTPUT
+                  OK="yes"
+                fi
+                #=================================================/\
+              fi
+            fi
+
+            if [ ${OK} == 'yes' ]; then
+              echo "All good"
+            else
+              echo "==========================================================================================="
+              echo "ERROR: Unfortunately pr/tag/branch logic failed to selected needed deploy strategy and tag"
+              echo "==========================================================================================="
+              exit 1
+            fi
