@@ -184,13 +184,14 @@ jobs:
           --env-file ${{ inputs.env_file }}
           up --detach
 
-  post:
-    runs-on: apifornia-builder
-    needs: [setup,build,deploy]
-    steps:
-      - name: Cleanup
-        run: |
-          docker image rm -f ${{ steps.meta.outputs.tags }} || true
+# commented because docker image cleanup job runs on the server each week
+#  post:
+#    runs-on: apifornia-builder
+#    needs: [setup,build,deploy]
+#    steps:
+#      - name: Cleanup
+#        run: |
+#          docker image rm -f ${{ steps.meta.outputs.tags }} || true
 
   # notify:
   #   runs-on: apifornia-builder
