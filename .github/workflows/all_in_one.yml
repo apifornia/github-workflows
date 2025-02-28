@@ -28,7 +28,6 @@ on:
     secrets:
       env_vars:
         required: false
-# still needed?
     outputs:
       image_with_tag:
         value: ghcr.io/${{ github.repository }}:${{ github.sha }}
@@ -36,11 +35,11 @@ on:
 jobs:
   setup:
     uses: apifornia/github-workflows/.github/workflows/setup_logic.yml@pr
-    outputs:
-      CALLER_REPO_NAME: ${{ steps.setup.outputs.CALLER_REPO_NAME }}
-      RUNNER: ${{ steps.setup.outputs.DEPLOY_RUNNER }}
-      TAG: ${{ steps.setup.outputs.EXTRA_TAG  }}
-      
+    #outputs:
+      #CALLER_REPO_NAME: ${{ steps.setup.outputs.CALLER_REPO_NAME }}
+      #RUNNER: ${{ steps.setup.outputs.DEPLOY_RUNNER }}
+      #TAG: ${{ steps.setup.outputs.EXTRA_TAG  }}
+
   build:
     runs-on: apifornia-builder
     if: "${{ inputs.do_build == true }}"
