@@ -35,15 +35,12 @@ on:
 
 jobs:
   setup:
-    runs-on: apifornia-builder
+    uses: apifornia/github-workflows/.github/workflows/setup_logic.yml@pr
     outputs:
       CALLER_REPO_NAME: ${{ steps.setup.outputs.CALLER_REPO_NAME }}
       RUNNER: ${{ steps.setup.outputs.DEPLOY_RUNNER }}
       TAG: ${{ steps.setup.outputs.EXTRA_TAG  }}
-    steps:
-      - id: setup
-        uses: apifornia/github-workflows/.github/workflows/setup_logic.yml@pr
-
+      
   build:
     runs-on: apifornia-builder
     if: "${{ inputs.do_build == true }}"
