@@ -147,7 +147,7 @@ jobs:
           docker compose down -v || true
           
           echo Starting service
-          docker compose pull
+          #docker compose pull
           docker compose up -d
 
   # ======
