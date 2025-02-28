@@ -192,17 +192,3 @@ jobs:
 #      - name: Cleanup
 #        run: |
 #          docker image rm -f ${{ steps.meta.outputs.tags }} || true
-
-  # notify:
-  #   runs-on: apifornia-builder
-  # deploy-lint:
-  #   needs: [setup,build]
-  #   runs-on: ${{ needs.setup.outputs.RUNNER }}
-  #   steps:
-  #     - name: Compose Lint
-  #       run: |
-  #         /usr/local/bin/docker compose
-  #         --project-name ${CI_PROJECT_NAME}
-  #         --project-directory ${CI_APPLICATION_PATH:-/srv/app}/${CI_PROJECT_NAME}
-  #         --file ${BUILD_DOCKER_COMPOSEFILE:-docker-compose.yml}
-  #         config
