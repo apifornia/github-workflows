@@ -138,10 +138,10 @@ jobs:
           sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' docker-compose.yml
           sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' .env
 
-          if [ "${{ matrix.app }}" == "${{ needs.setup.outputs.CALLER_REPO_NAME }}" ]; then
-            echo Replacing ${{ matrix.app }} default tag with current build
-            sed -i -e 's~IMAGE_NAME=.*~IMAGE_NAME=${{ inputs.pr_app_with_tag }}~g' .env
-          fi
+          #if [ "${{ matrix.app }}" == "${{ needs.setup.outputs.CALLER_REPO_NAME }}" ]; then
+            #echo Replacing ${{ matrix.app }} default tag with current build
+            #sed -i -e 's~IMAGE_NAME=.*~IMAGE_NAME=${{ inputs.pr_app_with_tag }}~g' .env
+          #fi
           
           echo Removing old containers
           docker compose down -v || true
