@@ -25,65 +25,24 @@ on:
         type: boolean
         default: true
         required: false
-    outputs:
-      image_with_tag:
-        value: ghcr.io/${{ github.repository }}:${{ github.sha }}
     secrets:
       env_vars:
         required: false
+# still needed?
+    outputs:
+      image_with_tag:
+        value: ghcr.io/${{ github.repository }}:${{ github.sha }}
 
 jobs:
   setup:
     runs-on: apifornia-builder
     outputs:
       CALLER_REPO_NAME: ${{ steps.setup.outputs.CALLER_REPO_NAME }}
-      RUNNER: ${{ steps.setup.outputs.RUNNER }}
-      TAG: ${{ steps.setup.outputs.TAG }}
+      RUNNER: ${{ steps.setup.outputs.DEPLOY_RUNNER }}
+      TAG: ${{ steps.setup.outputs.EXTRA_TAG  }}
     steps:
       - id: setup
-        name: Configuration setup
-        run: |
-            split=(${GITHUB_REPOSITORY//\// })
-            echo "CALLER_REPO_NAME=${split[1]}" >> $GITHUB_OUTPUT
-
-            # TAG based deployment
-            if [ ${GITHUB_REF_TYPE} == 'tag' ]; then
-              if [ ${GITHUB_REF_NAME} == 'dev' ]; then
-                echo "TAG=dev" >> $GITHUB_OUTPUT
-                echo "RUNNER=apifornia-dev" >> $GITHUB_OUTPUT
-                OK="yes"
-              fi
-              if [ ${GITHUB_REF_NAME} == 'prod' ]; then
-                echo "TAG=dev" >> $GITHUB_OUTPUT
-                echo "RUNNER=apifornia-prod" >> $GITHUB_OUTPUT
-                OK="yes"
-              fi
-            fi
-
-            # BRANCH based deployment
-            if [ ${GITHUB_REF_TYPE} == 'branch' ]; then
-              if [ ${GITHUB_REF_NAME} == 'develop' ]; then
-                echo "TAG=dev" >> $GITHUB_OUTPUT
-                echo "RUNNER=apifornia-dev" >> $GITHUB_OUTPUT
-                OK="yes"
-              fi
-              #=================================================\/
-              # to delete
-              #=================================================
-              if [ ${GITHUB_REF_NAME} == 'pr' ]; then
-                echo "TAG=dev" >> $GITHUB_OUTPUT
-                echo "RUNNER=apifornia-dev" >> $GITHUB_OUTPUT
-                OK="yes"
-              fi
-              #=================================================/\
-            fi
-
-            if [ ${OK} == 'yes' ]; then
-              echo "All good"
-            else
-              echo "ERROR: deployment can't proceed"
-              exit 1
-            fi
+        uses: apifornia/github-workflows/.github/workflows/setup_logic.yml@pr
 
   build:
     runs-on: apifornia-builder
