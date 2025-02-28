@@ -13,8 +13,8 @@ jobs:
     runs-on: apifornia-builder
     outputs:
       CALLER_REPO_NAME: ${{ steps.setup.outputs.CALLER_REPO_NAME }}
-      DEPLOY_RUNNER: ${{ steps.setup.outputs.RUNNER }}
-      EXTRA_TAG: ${{ steps.setup.outputs.TAG }}
+      DEPLOY_RUNNER: ${{ steps.setup.outputs.DEPLOY_RUNNER }}
+      EXTRA_TAG: ${{ steps.setup.outputs.EXTRA_TAG }}
     steps:
       - id: setup
         name: Deploy and Tag logic
