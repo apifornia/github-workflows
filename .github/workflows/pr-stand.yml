@@ -1,10 +1,7 @@
 on:
   workflow_call:
     inputs:
-      pr_parent_app:
-        type: string
-        required: true
-      pr_parent_tag:
+      pr_app_with_tag:
         type: string
         required: true
     secrets:
