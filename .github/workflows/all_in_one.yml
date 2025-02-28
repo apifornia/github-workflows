@@ -25,7 +25,7 @@ on:
       app:
         value: ${{ jobs.setup.outputs.CALLER_REPO_NAME }}
       tag:
-        value: ${{ jobs.setup.outputs.TAG }}
+        value: ${{ jobs.build.outputs.TAG }}
     secrets:
       env_vars:
         required: false
@@ -37,7 +37,6 @@ jobs:
       CALLER_REPO_NAME: ${{ steps.setup.outputs.CALLER_REPO_NAME }}
       RUNNER: ${{ steps.setup.outputs.RUNNER }}
       TAG: ${{ steps.setup.outputs.TAG }}
-      #BASE_DOMAIN: ${{ steps.setup.outputs.BASE_DOMAIN }}
     steps:
       - id: setup
         name: Configuration setup
@@ -86,8 +85,8 @@ jobs:
     runs-on: apifornia-builder
     if: "${{ inputs.do_build == true }}"
     needs: setup
-#    outputs:
-#      TAG: ${{ steps.meta.outputs.CALLER_REPO_NAME }}
+    outputs:
+      TAG: ${{ steps.meta.outputs.tags }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
