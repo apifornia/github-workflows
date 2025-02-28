@@ -29,12 +29,10 @@ jobs:
               STRATEGY="PR-based"
               
               PR_N=$(echo "$GITHUB_REF_NAME" | awk -F / '{print $1}')
-
-              EXTRA_TAG=pr-${split[1]}-${PR_N}
-              echo "EXTRA_TAG=pr-${split[1]}-${PR_N}" >> $GITHUB_OUTPUT
-              
-              DEPLOY_RUNNER=apifornia-dev
-              echo "DEPLOY_RUNNER=apifornia-dev" >> $GITHUB_OUTPUT
+              EXTRA_TAG="pr-${split[1]}-${PR_N}"
+              echo "EXTRA_TAG=${EXTRA_TAG}" >> $GITHUB_OUTPUT
+              DEPLOY_RUNNER="apifornia-dev"
+              echo "DEPLOY_RUNNER=${DEPLOY_RUNNER}" >> $GITHUB_OUTPUT
               
               OK="yes"
             else
@@ -43,22 +41,20 @@ jobs:
               if [ ${GITHUB_REF_TYPE} == 'tag' ]; then
                 
                 STRATEGY="tag-based"
-
+                
                 if [ ${GITHUB_REF_NAME} == 'dev' ]; then
-                  EXTRA_TAG=dev
-                  echo "EXTRA_TAG=dev" >> $GITHUB_OUTPUT
-
-                  DEPLOY_RUNNER=apifornia-dev
-                  echo "DEPLOY_RUNNER=apifornia-dev" >> $GITHUB_OUTPUT
-                  
+                  EXTRA_TAG="dev"
+                  echo "EXTRA_TAG=${EXTRA_TAG}" >> $GITHUB_OUTPUT
+                  DEPLOY_RUNNER="apifornia-dev"
+                  echo "DEPLOY_RUNNER=${DEPLOY_RUNNER}" >> $GITHUB_OUTPUT
                   OK="yes"
                 fi
+                
                 if [ ${GITHUB_REF_NAME} == 'prod' ]; then
-                  EXTRA_TAG=dev
-                  echo "EXTRA_TAG=dev" >> $GITHUB_OUTPUT
-                  DEPLOY_RUNNER=apifornia-prod
-
-                  echo "DEPLOY_RUNNER=apifornia-prod" >> $GITHUB_OUTPUT
+                  EXTRA_TAG="dev"
+                  echo "EXTRA_TAG=${EXTRA_TAG}" >> $GITHUB_OUTPUT
+                  DEPLOY_RUNNER="apifornia-prod"
+                  echo "DEPLOY_RUNNER=${DEPLOY_RUNNER}" >> $GITHUB_OUTPUT
                   OK="yes"
                 fi
               fi
@@ -69,20 +65,19 @@ jobs:
                 STRATEGY="branch-based"
                 
                 if [ ${GITHUB_REF_NAME} == 'develop' ]; then
-                  EXTRA_TAG=dev
-                  echo "EXTRA_TAG=dev" >> $GITHUB_OUTPUT
-                  
-                  DEPLOY_RUNNER=apifornia-dev
-                  echo "DEPLOY_RUNNER=apifornia-dev" >> $GITHUB_OUTPUT
-
+                  EXTRA_TAG="dev"
+                  echo "EXTRA_TAG=${EXTRA_TAG}" >> $GITHUB_OUTPUT
+                  DEPLOY_RUNNER="apifornia-dev"
+                  echo "DEPLOY_RUNNER=${DEPLOY_RUNNER}" >> $GITHUB_OUTPUT
                   OK="yes"
                 fi
                 #=================================================\/
                 # to delete
                 #=================================================
                 if [ ${GITHUB_REF_NAME} == 'pr' ]; then
-                  echo "EXTRA_TAG=something-remarkable" >> $GITHUB_OUTPUT
-                  echo "DEPLOY_RUNNER=apifornia-dev" >> $GITHUB_OUTPUT
+                  EXTRA_TAG="something-remarkable"
+                  echo "EXTRA_TAG=${EXTRA_TAG}" >> $GITHUB_OUTPUT
+                  echo "DEPLOY_RUNNER=${DEPLOY_RUNNER}" >> $GITHUB_OUTPUT
                   OK="yes"
                 fi
                 #=================================================/\
