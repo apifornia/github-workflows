@@ -32,11 +32,7 @@ jobs:
             TEST_USER=(user_$((1 + $RANDOM % 10000))@testov.net)
             TEST_PASSWORD=$(tr -dc 'A-Za-z0-9!?%=' < /dev/urandom | head -c 20)
 
-            echo Parent name: ${{ inputs.pr_parent_app }}
-            echo Parent tag: ${{ inputs.pr_parent_tag }}
-
-            echo ===========================================
-            
+            echo Build app with tag: ${{ inputs.pr_app_with_tag }}
             echo Caller repo: ${REPOSITORY_NAME[1]}
             echo PR number: ${REF_NAME[0]}
             echo Test user: $TEST_USER
