@@ -22,10 +22,8 @@ on:
         default: true
         required: false
     outputs:
-      app:
-        value: ${{ jobs.setup.outputs.CALLER_REPO_NAME }}
-      tag:
-        value: ${{ jobs.build.outputs.TAG }}
+      image_with_tag:
+        value: ghcr.io/${{ github.repository }}:${{ github.sha }}
     secrets:
       env_vars:
         required: false
@@ -85,8 +83,6 @@ jobs:
     runs-on: apifornia-builder
     if: "${{ inputs.do_build == true }}"
     needs: setup
-    outputs:
-      TAG: ${{ steps.meta.outputs.tags }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -103,7 +99,7 @@ jobs:
           images: ghcr.io/${{ github.repository }}
           tags: |
             type=raw,value=${{ github.sha }}
-            type=raw,value=latest
+            type=raw,value=${{ needs.setup.outputs.TAG }}
       
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
