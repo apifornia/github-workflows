@@ -16,6 +16,7 @@ jobs:
     runs-on: apifornia-builder
     outputs:
       CALLER_REPO_NAME: ${{ steps.setup.outputs.CALLER_REPO_NAME }}
+      PR_REPO_IMAGE: ${{ steps.setup.outputs.PR_REPO_IMAGE }}
       PR_NUMBER: ${{ steps.setup.outputs.PR_NUMBER }}
       PR_ID: ${{ steps.setup.outputs.PR_ID }}
       TEST_USER: ${{ steps.setup.outputs.TEST_USER }}
@@ -31,8 +32,10 @@ jobs:
             REF_NAME=(${GITHUB_REF_NAME//\// })
             TEST_USER=(user_$((1 + $RANDOM % 10000))@testov.net)
             TEST_PASSWORD=$(tr -dc 'A-Za-z0-9!?%=' < /dev/urandom | head -c 20)
+            PR_ID=(pr-${REPOSITORY_NAME[1]}-${REF_NAME[0]})
+            PR_REPO_IMAGE=(ghcr.io/${GITHUB_REPOSITORY}:${PR_ID})
 
-            echo Build app with tag: ${{ inputs.pr_app_with_tag }}
+            echo Build app with tag: ${PR_REPO_IMAGE}
             echo Caller repo: ${REPOSITORY_NAME[1]}
             echo PR number: ${REF_NAME[0]}
             echo Test user: $TEST_USER
@@ -40,7 +43,8 @@ jobs:
             
             echo "CALLER_REPO_NAME=${REPOSITORY_NAME[1]}" >> $GITHUB_OUTPUT
             echo "PR_NUMBER=${REF_NAME[0]}" >> $GITHUB_OUTPUT
-            echo "PR_ID=pr-${REPOSITORY_NAME[1]}-${REF_NAME[0]}" >> $GITHUB_OUTPUT
+            echo "PR_ID=${PR_ID}" >> $GITHUB_OUTPUT
+            echo "PR_REPO_IMAGE=${PR_REPO_IMAGE}" >> $GITHUB_OUTPUT
             echo "TEST_USER=${TEST_USER}" >> $GITHUB_OUTPUT
             echo "TEST_PASSWORD=${TEST_PASSWORD}" >> $GITHUB_OUTPUT
   
@@ -138,10 +142,11 @@ jobs:
           sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' docker-compose.yml
           sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' .env
 
-          #if [ "${{ matrix.app }}" == "${{ needs.setup.outputs.CALLER_REPO_NAME }}" ]; then
-            #echo Replacing ${{ matrix.app }} default tag with current build
-            #sed -i -e 's~IMAGE_NAME=.*~IMAGE_NAME=${{ inputs.pr_app_with_tag }}~g' .env
-          #fi
+          if [ "${{ matrix.app }}" == "${{ needs.setup.outputs.CALLER_REPO_NAME }}" ]; then
+            echo Replacing image for app "${{ matrix.app }}"
+            sed -i -e 's~IMAGE_NAME=.*~IMAGE_NAME=${{ needs.setup.outputs.PR_REPO_IMAGE }}~g' .env
+            #sed -i -e 's~image: ghcr.*~image: ${{ needs.setup.outputs.PR_REPO_IMAGE }}~g' docker-compose.yml
+          fi
           
           echo Removing old containers
           docker compose down -v || true
