@@ -76,6 +76,7 @@ jobs:
                 if [ ${GITHUB_REF_NAME} == 'pr' ]; then
                   EXTRA_TAG="something-remarkable"
                   echo "EXTRA_TAG=${EXTRA_TAG}" >> $GITHUB_OUTPUT
+                  DEPLOY_RUNNER="apifornia-dev"
                   echo "DEPLOY_RUNNER=${DEPLOY_RUNNER}" >> $GITHUB_OUTPUT
                   OK="yes"
                 fi
