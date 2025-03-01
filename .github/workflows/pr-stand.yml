@@ -148,8 +148,6 @@ jobs:
               sed -i -e 's~:latest~:${{ needs.setup.outputs.PR_ID }}~g' docker-compose.yml
             fi
           fi
-
-          cat .env
           
           echo Removing old containers
           docker compose down -v || true
@@ -259,9 +257,20 @@ jobs:
           
           echo Setting unique id
           sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' docker-compose.yml
+
+          if [ "${{ matrix.app }}" == "${{ needs.setup.outputs.CALLER_REPO_NAME }}" ]; then
+            if [ "${{ matrix.suffix }}" == "_" ]; then
+              echo Replacing image for app "${{ matrix.app }}" in .env
+              sed -i -e 's~IMAGE_NAME=.*~IMAGE_NAME=${{ needs.setup.outputs.PR_REPO_IMAGE }}~g' .env
+            fi
+            if [ "${{ matrix.suffix }}" != "_" ]; then
+              echo Replacing image for app "${{ matrix.app }}" in docker-compose.yml
+              sed -i -e 's~:latest~:${{ needs.setup.outputs.PR_ID }}~g' docker-compose.yml
+            fi
+          fi
           
           echo Cleanup ${{ matrix.app }}
-          docker compose down -v || true
+          docker compose down -v --rmi || true
 
   # =============
   # INFRA cleanup
