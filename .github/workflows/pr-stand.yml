@@ -162,6 +162,8 @@ jobs:
   tests:
     needs: [setup,infra,apps]
     runs-on: apifornia-builder
+    outputs:
+      WATCHER_ENV_FILE: ${{ steps.config.outputs.ENV_FILE }}
     steps:
 #      - name: Create user
 #        run: |
@@ -194,23 +196,32 @@ jobs:
             sleep 1m
           done
 
-      - name: Get config
+      - id: config
+        name: Get/Generate config
         run: |
           echo Get env vars:
           echo  "${{ secrets.gh_token }}" | gh auth login --with-token
-          gh variable get PR --repo apifornia/watcher > .env
+          gh variable get PR --repo apifornia/watcher > .${{ needs.setup.outputs.PR_ID }}.env
           ls -lah
 
           echo Setting unique id
-          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' .env
+          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' .${{ needs.setup.outputs.PR_ID }}.env
+
+          echo Adding login creds
+          echo "CYPRESS_USER_LOGIN=${{ needs.setup.outputs.TEST_USER }}" >> .${{ needs.setup.outputs.PR_ID }}.env
+          echo "CYPRESS_USER_PASSWORD=${{ needs.setup.outputs.TEST_PASSWORD }}" >> .${{ needs.setup.outputs.PR_ID }}.env
+
+          ENV_FILE=($(pwd)/.${{ needs.setup.outputs.PR_ID }}.env)
+          echo $ENV_FILE
+          echo "ENV_FILE=${ENV_FILE}" >> $GITHUB_OUTPUT
           
-#      - name: E2E tests
-#        uses: apifornia/github-workflows/.github/workflows/npm_e2e.yml@main
-#        with:
-#          env: dev
-#          runs_on: apifornia-builder
-#        #secrets:
-#          #dev: ${{ vars.DEV }}
+          
+      - name: E2E tests
+        uses: apifornia/github-workflows/.github/workflows/npm_e2e.yml@pr
+        with:
+          runs_on: apifornia-builder
+          env_file: ${{ needs.tests.outputs.WATCHER_ENV_FILE }}
+
   # ============
   # APPS cleanup
   # ============
