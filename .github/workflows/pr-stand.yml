@@ -213,6 +213,7 @@ jobs:
           
           ENV_FILE=($(pwd)/.${{ needs.setup.outputs.PR_ID }}.env)
           echo $ENV_FILE
+          cat $ENV_FILE
           echo "ENV_FILE=${ENV_FILE}" >> $GITHUB_OUTPUT
           
       - name: E2E tests
