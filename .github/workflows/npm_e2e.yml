@@ -1,18 +1,13 @@
 on:
   workflow_call:
     inputs:
-      env:
-        type: string
-        required: true
       runs_on:
         type: string
         default: "apifornia-builder"
         required: true
-    secrets:
-      dev:
-        required: false
-      prod:
-        required: false
+      env_vars:
+        type: string
+        required: true
 
 jobs:
   test:
@@ -28,7 +23,7 @@ jobs:
           node-version: 18
 
       - name: Generate .env file
-        run: echo "${{ secrets.dev }}" > dev.env && echo "${{ secrets.prod }}" > prod.env
+        run: echo "${{ inputs.env_vars }}" > .env 
 
       - id: tests
         name: Run tests
@@ -40,7 +35,7 @@ jobs:
           # RUN TESTS
           docker run \
             --name ${RUNNER_NAME}-cypress \
-            --env-file	${{ inputs.env }}.env \
+            --env-file .env \
             -v ${LOCAL_FOLDER}/work/watcher/watcher:/e2e \
             -w /e2e \
             cypress/included:latest \
