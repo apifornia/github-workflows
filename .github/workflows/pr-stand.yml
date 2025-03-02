@@ -163,30 +163,23 @@ jobs:
     needs: [setup,infra,apps]
     runs-on: apifornia-builder
     steps:
-      - name: Create user
-        run: |
-          echo OK <- to delete
-          while :
-          do
-            if [[ $(docker run -v --rm --network private curlimages/curl:latest curl -LI http://${{ needs.setup.outputs.PR_ID }}-flow-core:3002 -o /dev/null -w '%{http_code}\n' -s) == "404" ]]; then
-              echo "Seems ready..."
-              sleep 1m
-              # 1st user. won't be able to login. BUG
-              docker run --rm --network private curlimages/curl:latest \
-                curl -v -X POST 'http://${{ needs.setup.outputs.PR_ID }}-flow-core:3002/auth/register' -H 'Content-Type: application/json' -d '{"email": "dummy_${{ needs.setup.outputs.TEST_USER }}","password": "${{ needs.setup.outputs.TEST_PASSWORD }}"}'
-              docker run --rm --network private curlimages/curl:latest \
-                curl -v -X POST 'http://${{ needs.setup.outputs.PR_ID }}-flow-core:3002/auth/register' -H 'Content-Type: application/json' -d '{"email": "${{ needs.setup.outputs.TEST_USER }}","password": "${{ needs.setup.outputs.TEST_PASSWORD }}"}'
-              exit 0
-            fi
-            echo "Waiting for stop.txt"
-            sleep 1m
-          done
-#      - name: E2E tests
-#        uses: apifornia/github-workflows/.github/workflows/npm_e2e.yml@main
-#        with:
-#          env: dev
-#        #secrets:
-#          #dev: ${{ vars.DEV }}
+#      - name: Create user
+#        run: |
+#          while :
+#          do
+#            if [[ $(docker run -v --rm --network private curlimages/curl:latest curl -LI http://${{ needs.setup.outputs.PR_ID }}-flow-core:3002 -o /dev/null -w '%{http_code}\n' -s) == "404" ]]; then
+#              echo "Seems ready..."
+#              sleep 1m
+#              # 1st user. won't be able to login. BUG
+#              docker run --rm --network private curlimages/curl:latest \
+#                curl -v -X POST 'http://${{ needs.setup.outputs.PR_ID }}-flow-core:3002/auth/register' -H 'Content-Type: application/json' -d '{"email": "dummy_${{ needs.setup.outputs.TEST_USER }}","password": "${{ needs.setup.outputs.TEST_PASSWORD }}"}'
+#              docker run --rm --network private curlimages/curl:latest \
+#                curl -v -X POST 'http://${{ needs.setup.outputs.PR_ID }}-flow-core:3002/auth/register' -H 'Content-Type: application/json' -d '{"email": "${{ needs.setup.outputs.TEST_USER }}","password": "${{ needs.setup.outputs.TEST_PASSWORD }}"}'
+#              exit 0
+#            fi
+#            echo "Waiting for stop.txt"
+#            sleep 1m
+#          done
       - name: Wait
         run: |
           pwd
@@ -200,7 +193,24 @@ jobs:
             echo "Waiting for stop.txt"
             sleep 1m
           done
-  
+
+      - name: Get config
+        run: |
+          echo Get env vars:
+          echo  "${{ secrets.gh_token }}" | gh auth login --with-token
+          gh variable get PR --repo apifornia/watcher > .env
+          ls -lah
+
+          echo Setting unique id
+          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' .env
+          
+#      - name: E2E tests
+#        uses: apifornia/github-workflows/.github/workflows/npm_e2e.yml@main
+#        with:
+#          env: dev
+#          runs_on: apifornia-builder
+#        #secrets:
+#          #dev: ${{ vars.DEV }}
   # ============
   # APPS cleanup
   # ============
