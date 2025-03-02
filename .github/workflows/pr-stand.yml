@@ -215,13 +215,12 @@ jobs:
           echo $ENV_FILE
           echo "ENV_FILE=${ENV_FILE}" >> $GITHUB_OUTPUT
           
-          
       - name: E2E tests
         uses: apifornia/github-workflows/.github/workflows/npm_e2e.yml@pr
         with:
           runs_on: apifornia-builder
           env_file: ${{ needs.tests.outputs.WATCHER_ENV_FILE }}
-
+          
   # ============
   # APPS cleanup
   # ============
