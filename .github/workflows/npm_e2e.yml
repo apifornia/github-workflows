@@ -7,22 +7,18 @@ on:
         required: true
       env_vars:
         type: string
-        required: true
+        required: false
 
 jobs:
   test:
     runs-on: ${{ inputs.runs_on }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 1
-
       - uses: actions/setup-node@v3
         with:
           node-version: 18
 
       - name: Generate .env file
+        if: inputs.env_vars != ''
         run: echo "${{ inputs.env_vars }}" > .env 
 
       - id: tests
