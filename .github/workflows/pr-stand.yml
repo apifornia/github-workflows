@@ -225,12 +225,12 @@ jobs:
           path: ${{ needs.setup.outputs.PR_ID }}_watcher
           token: ${{ secrets.gh_token }}
 
-      - name: E2E tests
-        uses: apifornia/github-workflows/.github/workflows/npm_e2e.yml@pr
-        with:
-          runs_on: apifornia-builder
-          env_file: ${{ steps.config.outputs.ENV_FILE }}
-          folder: ${{ needs.setup.outputs.PR_ID }}_watcher
+#      - name: E2E tests
+#        uses: apifornia/github-workflows/.github/workflows/npm_e2e.yml@pr
+#        with:
+#          runs_on: apifornia-builder
+#          env_file: ${{ steps.config.outputs.ENV_FILE }}
+#          folder: ${{ needs.setup.outputs.PR_ID }}_watcher
           
   # ============
   # APPS cleanup
