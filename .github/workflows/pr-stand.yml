@@ -280,7 +280,7 @@ jobs:
           fi
           
           echo Cleanup ${{ matrix.app }}
-          docker compose down -v --rmi || true
+          docker compose down -v || true
 
   # =============
   # INFRA cleanup
