@@ -12,6 +12,10 @@ on:
         type: string
         default: ".env"
         required: false
+      folder:
+        type: string
+        default: "./"
+        required: false
 
 jobs:
   test:
@@ -28,6 +32,7 @@ jobs:
       - id: tests
         name: Run tests
         run: |
+          cd ${{ inputs.folder }}
           npm install
           # CLEANUP
           docker container rm ${RUNNER_NAME}-cypress || true
