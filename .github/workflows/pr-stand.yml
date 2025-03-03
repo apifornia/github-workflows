@@ -93,7 +93,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: apifornia/flow-editor-vue3
-          ref: pr
+          ref: develop
           path: flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}
           token: ${{ secrets.gh_token }}
       - name: Get env file
@@ -352,7 +352,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: apifornia/flow-editor-vue3
-          ref: pr
+          ref: develop
           path: flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}
           token: ${{ secrets.gh_token }}
       - name: Get env file
