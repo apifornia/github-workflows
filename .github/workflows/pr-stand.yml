@@ -121,8 +121,7 @@ jobs:
           IMAGE_NAME: ${{ steps.front-build.outputs.imageid }}
         run: >
           cat flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env && \
-          /usr/bin/docker compose
-          -p flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}
+          docker compose
           -f flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/docker/compose/pr/docker-compose.yml
           up --detach
 #          --env-file flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env
@@ -372,7 +371,7 @@ jobs:
         env:
           IMAGE_NAME: ${{ steps.meta.outputs.tags }}
         run: >
-          /usr/bin/docker compose down -f flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/docker/compose/pr/docker-compose.yml
+          docker compose --env-file flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env down -f flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/docker/compose/pr/docker-compose.yml
 
 
   # =============
