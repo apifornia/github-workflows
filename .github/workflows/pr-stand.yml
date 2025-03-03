@@ -105,8 +105,10 @@ jobs:
           echo Setting unique id
           sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env
           sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/docker/compose/pr/docker-compose.yml
+          cat flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env
       
-      - name: Build
+      - id: front-build
+        name: Build
         uses: docker/build-push-action@v4
         with:
           context: flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}
@@ -116,13 +118,14 @@ jobs:
       
       - name: Update and start App
         env:
-          IMAGE_NAME: ${{ steps.meta.outputs.tags }}
+          IMAGE_NAME: ${{ steps.front-build.outputs.imageid }}
         run: >
+          cat flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env && \
           /usr/bin/docker compose
           -p flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}
           -f flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/docker/compose/pr/docker-compose.yml
-          --env-file flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env
           up --detach
+#          --env-file flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env
 
   # ===============
   # APPS deployment
