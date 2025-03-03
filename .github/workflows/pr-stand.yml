@@ -221,19 +221,6 @@ jobs:
             echo "Waiting for stop.txt"
             sleep 1m
           done
-#      - name: Wait
-#        run: |
-#          pwd
-#          while :
-#          do 
-#            if [[ -e ./stop.txt ]]; then
-#              echo "Exiting"
-#              rm stop.txt
-#              exit 0
-#            fi
-#            echo "Waiting for stop.txt"
-#            sleep 1m
-#          done
       - id: config
         name: Get/Generate config
         run: |
@@ -253,6 +240,19 @@ jobs:
           echo $ENV_FILE
           cat $ENV_FILE
           echo "ENV_FILE=${ENV_FILE}" >> $GITHUB_OUTPUT
+      - name: Wait
+        run: |
+          pwd
+          while :
+          do 
+            if [[ -e ./stop.txt ]]; then
+              echo "Exiting"
+              rm stop.txt
+              exit 0
+            fi
+            echo "Waiting for stop.txt"
+            sleep 1m
+          done
       - name: Clone watcher
         uses: actions/checkout@v4
         with:
