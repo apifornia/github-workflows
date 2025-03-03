@@ -116,7 +116,7 @@ jobs:
           context: flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}
           file: flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/docker/images/dev/Dockerfile
           push: false
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ needs.setup.outputs.PR_ID }}
       - name: Update and start App
         env:
           IMAGE_NAME: ${{ steps.front-build.outputs.imageid }}
@@ -344,7 +344,7 @@ jobs:
   # =============
   frontend-down:
     needs: [setup,infra,frontend-up,apps,tests,wipe-apps]
-    if: "${{ steps.setup.outputs.CALLER_REPO_NAME != 'flow-editor-vue3' }}"
+    if: "${{ needs.setup.outputs.CALLER_REPO_NAME != 'flow-editor-vue3' }}"
     runs-on: apifornia-builder
     steps:
       - name: Clone ${{ matrix.app }}
