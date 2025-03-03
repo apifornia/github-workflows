@@ -81,11 +81,54 @@ jobs:
           echo Starting service
           docker compose up -d
 
+
+  # ========================
+  # FRONTEND build and start
+  # ========================
+  frontend-up:
+    needs: [setup,infra]
+    runs-on: apifornia-builder
+    steps:
+      - name: Clone ${{ matrix.app }}
+        uses: actions/checkout@v4
+        with:
+          repository: apifornia/flow-editor-vue3
+          #ref: pr
+          path: flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}
+          token: ${{ secrets.gh_token }}
+      - name: Get env file
+        run: |
+          echo Get env vars:
+          echo  "${{ secrets.gh_token }}" | gh auth login --with-token
+          gh variable get PR --repo apifornia/flow-editor-vue3 > flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env
+          
+          echo Setting unique id
+          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env
+          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/docker/compose/pr/docker-compose.yml
+      
+      - name: Build
+        uses: docker/build-push-action@v4
+        with:
+          context: flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}
+          file: flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/docker/images/dev/Dockerfile
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+      
+      - name: Update and start App
+        env:
+          IMAGE_NAME: ${{ steps.meta.outputs.tags }}
+        run: >
+          /usr/bin/docker compose
+          -p flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}
+          -f flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/docker/compose/pr/docker-compose.yml
+          --env-file flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env
+          up --detach
+
   # ===============
   # APPS deployment
   # ===============
   apps:
-    needs: [setup,infra]
+    needs: [setup,infra,frontend-up]
     runs-on: apifornia-builder
     strategy:
       max-parallel: 1
@@ -103,9 +146,6 @@ jobs:
           - app: wizard
             folder: spelloom/docker/compose/pr
             suffix: spelloom
-          - app: flow-editor-vue3
-            folder: docker/compose/pr
-            suffix: _
     steps:
       - name: Clone ${{ matrix.app }}
         uses: actions/checkout@v4
@@ -160,7 +200,7 @@ jobs:
   # TESTS
   # ======
   tests:
-    needs: [setup,infra,apps]
+    needs: [setup,infra,frontend-up,apps]
     runs-on: apifornia-builder
 #    outputs:
 #      WATCHER_ENV_FILE: ${{ steps.config.outputs.ENV_FILE }}
@@ -236,7 +276,7 @@ jobs:
   # APPS cleanup
   # ============
   wipe-apps:
-    needs: [setup,infra,apps,tests]
+    needs: [setup,infra,frontend-up,apps,tests]
     if: ${{ always() }}
     runs-on: apifornia-builder
     strategy:
@@ -255,9 +295,6 @@ jobs:
           - app: wizard
             folder: spelloom/docker/compose/pr
             suffix: spelloom
-          - app: flow-editor-vue3
-            folder: docker/compose/pr
-            suffix: _
     steps:
       - name: Clone ${{ matrix.app }}
         uses: actions/checkout@v4
@@ -304,10 +341,42 @@ jobs:
           docker compose down -v || true
 
   # =============
+  # FRONTEND stop
+  # =============
+  frontend-down:
+    needs: [setup,infra,frontend-up,apps,tests,wipe-apps]
+    if: ${{ always() }}
+    runs-on: apifornia-builder
+    steps:
+      - name: Clone ${{ matrix.app }}
+        uses: actions/checkout@v4
+        with:
+          repository: apifornia/flow-editor-vue3
+          #ref: pr
+          path: flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}
+          token: ${{ secrets.gh_token }}
+      - name: Get env file
+        run: |
+          echo Get env vars:
+          echo  "${{ secrets.gh_token }}" | gh auth login --with-token
+          gh variable get PR --repo apifornia/flow-editor-vue3 > flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env
+          
+          echo Setting unique id
+          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env
+          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/docker/compose/pr/docker-compose.yml
+      
+      - name: Update and start App
+        env:
+          IMAGE_NAME: ${{ steps.meta.outputs.tags }}
+        run: >
+          /usr/bin/docker compose down -f flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/docker/compose/pr/docker-compose.yml
+
+
+  # =============
   # INFRA cleanup
   # =============
   wipe-infra:
-    needs: [setup,infra,apps,tests,wipe-apps]
+    needs: [setup,infra,apps,tests,wipe-apps,frontend-down]
     if: ${{ always() }}
     runs-on: apifornia-builder
     strategy:
