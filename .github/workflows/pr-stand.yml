@@ -221,20 +221,19 @@ jobs:
             echo "Waiting for stop.txt"
             sleep 1m
           done
-
-      - name: Wait
-        run: |
-          pwd
-          while :
-          do 
-            if [[ -e ./stop.txt ]]; then
-              echo "Exiting"
-              rm stop.txt
-              exit 0
-            fi
-            echo "Waiting for stop.txt"
-            sleep 1m
-          done
+#      - name: Wait
+#        run: |
+#          pwd
+#          while :
+#          do 
+#            if [[ -e ./stop.txt ]]; then
+#              echo "Exiting"
+#              rm stop.txt
+#              exit 0
+#            fi
+#            echo "Waiting for stop.txt"
+#            sleep 1m
+#          done
       - id: config
         name: Get/Generate config
         run: |
