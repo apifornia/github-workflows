@@ -365,7 +365,7 @@ jobs:
           sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/docker/compose/pr/docker-compose.yml
       - name: Shut down
         run: >
-          docker compose --env-file flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env down -f flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/docker/compose/pr/docker-compose.yml
+          docker compose --env-file flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env -f flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/docker/compose/pr/docker-compose.yml down
 
 
   # =============
