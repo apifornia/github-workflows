@@ -118,10 +118,7 @@ jobs:
         env:
           IMAGE_NAME: ${{ steps.front-build.outputs.imageid }}
         run: >
-          docker compose \
-          -f flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/docker/compose/pr/docker-compose.yml \
-          --env-file flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env \
-          up --detach
+          docker compose -f flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/docker/compose/pr/docker-compose.yml --env-file flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env up --detach
 
   # ===============
   # APPS deployment
