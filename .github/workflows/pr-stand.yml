@@ -343,7 +343,8 @@ jobs:
   # =============
   frontend-down:
     needs: [setup,infra,frontend-up,apps,tests,wipe-apps]
-    if: "${{ needs.setup.outputs.CALLER_REPO_NAME != 'flow-editor-vue3' }}"
+    #if: "${{ needs.setup.outputs.CALLER_REPO_NAME != 'flow-editor-vue3' }}"
+    if: ${{ always() }}
     runs-on: apifornia-builder
     steps:
       - name: Clone ${{ matrix.app }}
