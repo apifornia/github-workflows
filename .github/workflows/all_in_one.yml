@@ -11,7 +11,7 @@ on:
         required: false
       env_file:
         type: string
-        default: 'docker/compose/dev/.env'
+        default: '.env'
         required: false
       do_build:
         type: boolean
