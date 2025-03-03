@@ -30,48 +30,53 @@ jobs:
         run: echo "${{ inputs.env_vars }}" > "${{ inputs.env_file }}"
 
       - id: tests
-        name: Run tests
-        run: |
-          cd ${{ inputs.folder }}
-          npm install
-          # CLEANUP
-          docker container rm ${RUNNER_NAME}-cypress || true
-          rm -rf /tmp/runner/work/cypress_save/ || true && mkdir -p /tmp/runner/work/cypress_save/ || true
-          # RUN TESTS
-          docker run \
-            --name ${RUNNER_NAME}-cypress \
-            --env-file ${{ inputs.env_file }} \
-            -v ${LOCAL_FOLDER}/work/watcher/watcher:/e2e \
-            -w /e2e \
-            cypress/included:latest \
-            --browser  firefox \
-            --headless || true
-          # POST ACTIONS
-          docker logs ${RUNNER_NAME}-cypress | ansi2html > /tmp/runner/work/cypress_save/log.html
-          docker logs ${RUNNER_NAME}-cypress > /tmp/runner/work/cypress_save/log.txt
-          python3 getmsg.py /tmp/runner/work/cypress_save/log.txt > /tmp/runner/work/cypress_save/failing_flow.txt || true
-          cp -r ./cypress/screenshots/ /tmp/runner/work/cypress_save/ || true
-          echo "====cypress====="
-          ls ./cypress/**
+        name: E2E tests
+        uses: apifornia/github-actions/watcher-action@main
+        with:
+          runs_on: apifornia-builder
+      # - id: tests
+      #   name: Run tests
+      #   run: |
+      #     cd ${{ inputs.folder }}
+      #     npm install
+      #     # CLEANUP
+      #     docker container rm ${RUNNER_NAME}-cypress || true
+      #     rm -rf /tmp/runner/work/cypress_save/ || true && mkdir -p /tmp/runner/work/cypress_save/ || true
+      #     # RUN TESTS
+      #     docker run \
+      #       --name ${RUNNER_NAME}-cypress \
+      #       --env-file ${{ inputs.env_file }} \
+      #       -v ${LOCAL_FOLDER}/work/watcher/watcher:/e2e \
+      #       -w /e2e \
+      #       cypress/included:latest \
+      #       --browser  firefox \
+      #       --headless || true
+      #     # POST ACTIONS
+      #     docker logs ${RUNNER_NAME}-cypress | ansi2html > /tmp/runner/work/cypress_save/log.html
+      #     docker logs ${RUNNER_NAME}-cypress > /tmp/runner/work/cypress_save/log.txt
+      #     python3 getmsg.py /tmp/runner/work/cypress_save/log.txt > /tmp/runner/work/cypress_save/failing_flow.txt || true
+      #     cp -r ./cypress/screenshots/ /tmp/runner/work/cypress_save/ || true
+      #     echo "====cypress====="
+      #     ls ./cypress/**
 
-          # Find files with commas and rename them
-          find "/tmp/runner/work/cypress_save/" -type f -name "*,*" | while read -r file; do
-              # Get the directory and filename
-              dir=$(dirname "$file")
-              base=$(basename "$file")
+      #     # Find files with commas and rename them
+      #     find "/tmp/runner/work/cypress_save/" -type f -name "*,*" | while read -r file; do
+      #         # Get the directory and filename
+      #         dir=$(dirname "$file")
+      #         base=$(basename "$file")
               
-              # Replace commas with underscores in the filename
-              new_base=$(echo "$base" | sed 's/,/_/g')
+      #         # Replace commas with underscores in the filename
+      #         new_base=$(echo "$base" | sed 's/,/_/g')
               
-              # Rename the file
-              mv "$file" "$dir/$new_base"
-          done
+      #         # Rename the file
+      #         mv "$file" "$dir/$new_base"
+      #     done
 
-          echo "====save====="
-          ls /tmp/runner/work/cypress_save/**
-          EXIT=$(docker inspect ${RUNNER_NAME}-cypress --format='{{.State.ExitCode}}')
-          if [ "$EXIT" != "0" ]; then
-            exit 1
-          else
-            exit 0
-          fi
+      #     echo "====save====="
+      #     ls /tmp/runner/work/cypress_save/**
+      #     EXIT=$(docker inspect ${RUNNER_NAME}-cypress --format='{{.State.ExitCode}}')
+      #     if [ "$EXIT" != "0" ]; then
+      #       exit 1
+      #     else
+      #       exit 0
+      #     fi
