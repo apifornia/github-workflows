@@ -88,6 +88,9 @@ jobs:
   frontend-up:
     needs: [setup,infra]
     runs-on: apifornia-builder
+    if: "${{ steps.setup.outputs.CALLER_REPO_NAME != 'flow-editor-vue3' }}"
+    outputs:
+      IMAGE_ID: ${{ steps.front-build.outputs.imageid }}
     steps:
       - name: Clone ${{ matrix.app }}
         uses: actions/checkout@v4
@@ -341,7 +344,7 @@ jobs:
   # =============
   frontend-down:
     needs: [setup,infra,frontend-up,apps,tests,wipe-apps]
-    if: ${{ always() }}
+    if: "${{ steps.setup.outputs.CALLER_REPO_NAME != 'flow-editor-vue3' }}"
     runs-on: apifornia-builder
     steps:
       - name: Clone ${{ matrix.app }}
@@ -361,6 +364,8 @@ jobs:
           sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env
           sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/docker/compose/pr/docker-compose.yml
       - name: Shut down
+        env:
+          IMAGE_NAME: ${{ needs.setup.frontend-up.IMAGE_ID }}
         run: >
           docker compose --env-file flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env -f flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/docker/compose/pr/docker-compose.yml down
 
