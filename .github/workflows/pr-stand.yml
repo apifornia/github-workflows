@@ -88,9 +88,9 @@ jobs:
   frontend-up:
     needs: [setup,infra]
     runs-on: apifornia-builder
-    if: "${{ steps.setup.outputs.CALLER_REPO_NAME != 'flow-editor-vue3' }}"
-    #outputs:
-      #IMAGE_ID: ${{ steps.front-build.outputs.imageid }}
+    if: "${{ needs.setup.outputs.CALLER_REPO_NAME != 'flow-editor-vue3' }}"
+    outputs:
+      IMAGE_ID: ${{ steps.front-build.outputs.imageid }}
     steps:
       - name: Clone ${{ matrix.app }}
         uses: actions/checkout@v4
