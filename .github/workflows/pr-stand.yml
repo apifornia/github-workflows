@@ -235,7 +235,6 @@ jobs:
             echo "Waiting for stop.txt"
             sleep 1m
           done
-
       - id: config
         name: Get/Generate config
         run: |
@@ -255,7 +254,6 @@ jobs:
           echo $ENV_FILE
           cat $ENV_FILE
           echo "ENV_FILE=${ENV_FILE}" >> $GITHUB_OUTPUT
-
       - name: Clone watcher
         uses: actions/checkout@v4
         with:
@@ -263,7 +261,9 @@ jobs:
           ref: main
           path: ${{ needs.setup.outputs.PR_ID }}_watcher
           token: ${{ secrets.gh_token }}
-
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
       - name: E2E tests
         uses: apifornia/github-actions/watcher-action@main
         with:
