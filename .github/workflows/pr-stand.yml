@@ -204,23 +204,23 @@ jobs:
 #    outputs:
 #      WATCHER_ENV_FILE: ${{ steps.config.outputs.ENV_FILE }}
     steps:
-#      - name: Create user
-#        run: |
-#          while :
-#          do
-#            if [[ $(docker run -v --rm --network private curlimages/curl:latest curl -LI http://${{ needs.setup.outputs.PR_ID }}-flow-core:3002 -o /dev/null -w '%{http_code}\n' -s) == "404" ]]; then
-#              echo "Seems ready..."
-#              sleep 1m
-#              # 1st user. won't be able to login. BUG
-#              docker run --rm --network private curlimages/curl:latest \
-#                curl -v -X POST 'http://${{ needs.setup.outputs.PR_ID }}-flow-core:3002/auth/register' -H 'Content-Type: application/json' -d '{"email": "dummy_${{ needs.setup.outputs.TEST_USER }}","password": "${{ needs.setup.outputs.TEST_PASSWORD }}"}'
-#              docker run --rm --network private curlimages/curl:latest \
-#                curl -v -X POST 'http://${{ needs.setup.outputs.PR_ID }}-flow-core:3002/auth/register' -H 'Content-Type: application/json' -d '{"email": "${{ needs.setup.outputs.TEST_USER }}","password": "${{ needs.setup.outputs.TEST_PASSWORD }}"}'
-#              exit 0
-#            fi
-#            echo "Waiting for stop.txt"
-#            sleep 1m
-#          done
+      - name: Create user
+        run: |
+          while :
+          do
+            if [[ $(docker run -v --rm --network private curlimages/curl:latest curl -LI http://${{ needs.setup.outputs.PR_ID }}-flow-core:3002 -o /dev/null -w '%{http_code}\n' -s) == "404" ]]; then
+              echo "Seems ready..."
+              sleep 1m
+              # 1st user. won't be able to login. BUG
+              docker run --rm --network private curlimages/curl:latest \
+                curl -v -X POST 'http://${{ needs.setup.outputs.PR_ID }}-flow-core:3002/auth/register' -H 'Content-Type: application/json' -d '{"email": "dummy_${{ needs.setup.outputs.TEST_USER }}","password": "${{ needs.setup.outputs.TEST_PASSWORD }}"}'
+              docker run --rm --network private curlimages/curl:latest \
+                curl -v -X POST 'http://${{ needs.setup.outputs.PR_ID }}-flow-core:3002/auth/register' -H 'Content-Type: application/json' -d '{"email": "${{ needs.setup.outputs.TEST_USER }}","password": "${{ needs.setup.outputs.TEST_PASSWORD }}"}'
+              exit 0
+            fi
+            echo "Waiting for stop.txt"
+            sleep 1m
+          done
 
       - name: Wait
         run: |
@@ -360,12 +360,11 @@ jobs:
           echo  "${{ secrets.gh_token }}" | gh auth login --with-token
           gh variable get PR --repo apifornia/flow-editor-vue3 > flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env
           
-          echo Setting unique id
+          echo Setting unique id and add image name
           sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env
           sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/docker/compose/pr/docker-compose.yml
+          echo "IMAGE_NAME:${{ needs.setup.frontend-up.IMAGE_ID }}" >> flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env
       - name: Shut down
-        env:
-          IMAGE_NAME: ${{ needs.setup.frontend-up.IMAGE_ID }}
         run: >
           docker compose --env-file flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env -f flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/docker/compose/pr/docker-compose.yml down
 
