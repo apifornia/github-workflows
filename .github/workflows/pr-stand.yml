@@ -254,13 +254,13 @@ jobs:
           cat $ENV_FILE
           echo "ENV_FILE=${ENV_FILE}" >> $GITHUB_OUTPUT
 
-      - name: Clone watcher
-        uses: actions/checkout@v4
-        with:
-          repository: apifornia/wathcer
-          ref: main
-          path: ${{ needs.setup.outputs.PR_ID }}_watcher
-          token: ${{ secrets.gh_token }}
+#      - name: Clone watcher
+#        uses: actions/checkout@v4
+#        with:
+#          repository: apifornia/watcher
+#          ref: main
+#          path: ${{ needs.setup.outputs.PR_ID }}_watcher
+#          token: ${{ secrets.gh_token }}
 
 #      - name: E2E tests
 #        uses: apifornia/github-workflows/.github/workflows/npm_e2e.yml@pr
