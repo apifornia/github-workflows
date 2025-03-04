@@ -133,6 +133,9 @@ jobs:
       max-parallel: 1
       matrix:
         include:
+          - app: traefik
+            folder: docker/compose/pr
+            suffix: _
           - app: flow-core
             folder: docker/compose/pr
             suffix: _
@@ -281,6 +284,9 @@ jobs:
       #max-parallel: 1
       matrix:
         include:
+          - app: traefik
+            folder: docker/compose/pr
+            suffix: _
           - app: flow-core
             folder: docker/compose/pr
             suffix: _
