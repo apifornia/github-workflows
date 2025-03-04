@@ -31,8 +31,11 @@ on:
 
 jobs:
   setup:
-    uses: apifornia/github-workflows/.github/workflows/setup_logic.yml@pr
-
+    runs-on: apifornia-builder
+    steps:
+      - name: Setup
+        uses: apifornia/github-actions/setup-logic@main
+  
   build:
     runs-on: apifornia-builder
     if: "${{ inputs.do_build == true }}"
