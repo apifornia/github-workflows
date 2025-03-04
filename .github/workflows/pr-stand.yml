@@ -53,6 +53,7 @@ jobs:
     strategy:
       matrix:
         app:
+          - traefik
           - kafka
           - mongo
           - postgres
@@ -133,9 +134,6 @@ jobs:
       max-parallel: 1
       matrix:
         include:
-          - app: traefik
-            folder: docker/compose/pr
-            suffix: _
           - app: flow-core
             folder: docker/compose/pr
             suffix: _
@@ -284,9 +282,6 @@ jobs:
       #max-parallel: 1
       matrix:
         include:
-          - app: traefik
-            folder: docker/compose/pr
-            suffix: _
           - app: flow-core
             folder: docker/compose/pr
             suffix: _
@@ -385,6 +380,7 @@ jobs:
     strategy:
       matrix:
         app:
+          - traefik
           - kafka
           - mongo
           - postgres
