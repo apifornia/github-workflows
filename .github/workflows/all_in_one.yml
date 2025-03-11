@@ -32,8 +32,13 @@ on:
 jobs:
   setup:
     runs-on: apifornia-builder
+    outputs:
+      CALLER_REPO_NAME: ${{ steps.setup.outputs.CALLER_REPO_NAME }}
+      DEPLOY_RUNNER: ${{ steps.setup.outputs.DEPLOY_RUNNER }}
+      EXTRA_TAG: ${{ steps.setup.outputs.EXTRA_TAG }}
     steps:
-      - name: Setup
+      - id: setup
+        name: Setup
         uses: apifornia/github-actions/setup-logic@main
   
   build:
