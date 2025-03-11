@@ -27,7 +27,7 @@ jobs:
             REPOSITORY_NAME=(${GITHUB_REPOSITORY//\// })
             REF_NAME=(${GITHUB_REF_NAME//\// })
             TEST_USER=(user_$((1 + $RANDOM % 10000))@testov.net)
-            TEST_PASSWORD=$(tr -dc 'A-Za-z0-9!?%=' < /dev/urandom | head -c 20)
+            TEST_PASSWORD=$(tr -dc 'A-Za-z0-9!?%=' < /dev/urandom | head -c 20)!
             PR_ID=(pr-${REPOSITORY_NAME[1]}-${REF_NAME[0]})
             PR_REPO_IMAGE=(ghcr.io/${GITHUB_REPOSITORY}:${PR_ID})
 
@@ -229,7 +229,6 @@ jobs:
           echo Get env vars:
           echo  "${{ secrets.gh_token }}" | gh auth login --with-token
           gh variable get PR --repo apifornia/watcher > .${{ needs.setup.outputs.PR_ID }}.env
-          ls -lah
           
           echo Setting unique id
           sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' .${{ needs.setup.outputs.PR_ID }}.env
