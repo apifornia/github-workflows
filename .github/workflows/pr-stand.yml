@@ -238,8 +238,6 @@ jobs:
           echo "CYPRESS_USER_PASSWORD=${{ needs.setup.outputs.TEST_PASSWORD }}" >> .${{ needs.setup.outputs.PR_ID }}.env
           
           ENV_FILE=($(pwd)/.${{ needs.setup.outputs.PR_ID }}.env)
-          echo $ENV_FILE
-          cat $ENV_FILE
           echo "ENV_FILE=${ENV_FILE}" >> $GITHUB_OUTPUT
       - name: Wait
         run: |
