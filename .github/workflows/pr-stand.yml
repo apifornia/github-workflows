@@ -1,0 +1,407 @@
+on:
+  workflow_call:
+    secrets:
+      gh_token:
+        required: true
+
+jobs:
+  # =====
+  # SETUP
+  # =====
+  setup:
+    runs-on: apifornia-builder
+    outputs:
+      CALLER_REPO_NAME: ${{ steps.setup.outputs.CALLER_REPO_NAME }}
+      PR_REPO_IMAGE: ${{ steps.setup.outputs.PR_REPO_IMAGE }}
+      PR_NUMBER: ${{ steps.setup.outputs.PR_NUMBER }}
+      PR_ID: ${{ steps.setup.outputs.PR_ID }}
+      TEST_USER: ${{ steps.setup.outputs.TEST_USER }}
+      TEST_PASSWORD: ${{ steps.setup.outputs.TEST_PASSWORD }}
+    steps:
+      - id: setup
+        name: Configuration setup
+        run: |
+            env
+            echo ======================================
+            
+            REPOSITORY_NAME=(${GITHUB_REPOSITORY//\// })
+            REF_NAME=(${GITHUB_REF_NAME//\// })
+            TEST_USER=(user_$((1 + $RANDOM % 10000))@testov.net)
+            TEST_PASSWORD=$(tr -dc 'A-Za-z0-9!?%=' < /dev/urandom | head -c 20)
+            PR_ID=(pr-${REPOSITORY_NAME[1]}-${REF_NAME[0]})
+            PR_REPO_IMAGE=(ghcr.io/${GITHUB_REPOSITORY}:${PR_ID})
+
+            echo Build app with tag: ${PR_REPO_IMAGE}
+            echo Caller repo: ${REPOSITORY_NAME[1]}
+            echo PR number: ${REF_NAME[0]}
+            echo Test user: $TEST_USER
+            echo Password: $TEST_PASSWORD
+            
+            echo "CALLER_REPO_NAME=${REPOSITORY_NAME[1]}" >> $GITHUB_OUTPUT
+            echo "PR_NUMBER=${REF_NAME[0]}" >> $GITHUB_OUTPUT
+            echo "PR_ID=${PR_ID}" >> $GITHUB_OUTPUT
+            echo "PR_REPO_IMAGE=${PR_REPO_IMAGE}" >> $GITHUB_OUTPUT
+            echo "TEST_USER=${TEST_USER}" >> $GITHUB_OUTPUT
+            echo "TEST_PASSWORD=${TEST_PASSWORD}" >> $GITHUB_OUTPUT
+  
+  # ================
+  # INFRA deployment
+  # ================
+  infra:
+    needs: [setup]
+    runs-on: apifornia-builder
+    strategy:
+      matrix:
+        app:
+          - traefik
+          - kafka
+          - mongo
+          - postgres
+          - redis
+    steps:
+      - name: Clone infra
+        uses: actions/checkout@v4
+        with:
+          repository: apifornia/infrastructure
+          #ref: main
+          path: ${{ matrix.app }}
+          token: ${{ secrets.gh_token }}
+      - name: Update and run ${{ matrix.app }}
+        run: |
+          echo app: ${{ matrix.app }}
+          cd ${{ matrix.app }}/docker-compose/pr/${{ matrix.app }}
+          pwd
+          ls -lah
+          
+          echo Setting unique id
+          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' docker-compose.yml
+          
+          echo Removing old containers
+          docker compose down -v || true
+          
+          echo Starting service
+          docker compose up -d
+
+
+  # ========================
+  # FRONTEND build and start
+  # ========================
+  frontend-up:
+    needs: [setup,infra]
+    runs-on: apifornia-builder
+    if: "${{ needs.setup.outputs.CALLER_REPO_NAME != 'flow-editor-vue3' }}"
+    outputs:
+      IMAGE_ID: ${{ steps.front-build.outputs.imageid }}
+    steps:
+      - name: Clone ${{ matrix.app }}
+        uses: actions/checkout@v4
+        with:
+          repository: apifornia/flow-editor-vue3
+          ref: develop
+          path: flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}
+          token: ${{ secrets.gh_token }}
+      - name: Get env file
+        run: |
+          echo Get env vars:
+          echo  "${{ secrets.gh_token }}" | gh auth login --with-token
+          gh variable get PR --repo apifornia/flow-editor-vue3 > flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env
+          
+          echo Setting unique id
+          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env
+          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/docker/compose/pr/docker-compose.yml
+          cat flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env
+      - id: front-build
+        name: Build
+        uses: docker/build-push-action@v4
+        with:
+          context: flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}
+          file: flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/docker/images/dev/Dockerfile
+          push: false
+          tags: ${{ needs.setup.outputs.PR_ID }}
+      - name: Update and start App
+        env:
+          IMAGE_NAME: ${{ steps.front-build.outputs.imageid }}
+        run: >
+          docker compose -f flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/docker/compose/pr/docker-compose.yml --env-file flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env up --detach
+
+  # ===============
+  # APPS deployment
+  # ===============
+  apps:
+    needs: [setup,infra,frontend-up]
+    runs-on: apifornia-builder
+    strategy:
+      max-parallel: 1
+      matrix:
+        include:
+          - app: flow-core
+            folder: docker/compose/pr
+            suffix: _
+          - app: worker-rust
+            folder: docker/compose/pr
+            suffix: _
+          - app: wizard
+            folder: chamber/docker/compose/pr
+            suffix: chamber
+          - app: wizard
+            folder: spelloom/docker/compose/pr
+            suffix: spelloom
+    steps:
+      - name: Clone ${{ matrix.app }}
+        uses: actions/checkout@v4
+        with:
+          repository: apifornia/${{ matrix.app }}
+          ref: pr
+          path: ${{ matrix.app }}_${{ matrix.suffix }}
+          token: ${{ secrets.gh_token }}
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: github
+          password: ${{ secrets.gh_token }}
+      - name: Update and run ${{ matrix.app }}
+        run: |
+          echo app: ${{ matrix.app }}
+          echo folder: ${{ matrix.app }}
+          echo suffix: ${{ matrix.suffix }}
+          echo =============================================
+          cd ${{ matrix.app }}_${{ matrix.suffix }}/${{ matrix.folder }}
+          pwd
+          
+          echo Get env vars:
+          echo  "${{ secrets.gh_token }}" | gh auth login --with-token
+          gh variable get PR --repo apifornia/${{ matrix.app }} > .env
+          ls -lah
+
+          echo Setting unique id
+          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' docker-compose.yml
+          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' .env
+
+          if [ "${{ matrix.app }}" == "${{ needs.setup.outputs.CALLER_REPO_NAME }}" ]; then
+            if [ "${{ matrix.suffix }}" == "_" ]; then
+              echo Replacing image for app "${{ matrix.app }}" in .env
+              sed -i -e 's~IMAGE_NAME=.*~IMAGE_NAME=${{ needs.setup.outputs.PR_REPO_IMAGE }}~g' .env
+            fi
+            if [ "${{ matrix.suffix }}" != "_" ]; then
+              echo Replacing image for app "${{ matrix.app }}" in docker-compose.yml
+              sed -i -e 's~:latest~:${{ needs.setup.outputs.PR_ID }}~g' docker-compose.yml
+            fi
+          fi
+          
+          echo Removing old containers
+          docker compose down -v || true
+          
+          echo Starting service
+          #docker compose pull
+          docker compose up -d
+
+  # ======
+  # TESTS
+  # ======
+  tests:
+    needs: [setup,infra,frontend-up,apps]
+    runs-on: apifornia-builder
+#    outputs:
+#      WATCHER_ENV_FILE: ${{ steps.config.outputs.ENV_FILE }}
+    steps:
+      - name: Create user
+        run: |
+          while :
+          do
+            if [[ $(docker run -v --rm --network private curlimages/curl:latest curl -LI http://${{ needs.setup.outputs.PR_ID }}-flow-core:3002 -o /dev/null -w '%{http_code}\n' -s) == "404" ]]; then
+              echo "Seems ready..."
+              sleep 1m
+              # 1st user. won't be able to login. BUG
+              docker run --rm --network private curlimages/curl:latest \
+                curl -v -X POST 'http://${{ needs.setup.outputs.PR_ID }}-flow-core:3002/auth/register' -H 'Content-Type: application/json' -d '{"email": "dummy_${{ needs.setup.outputs.TEST_USER }}","password": "${{ needs.setup.outputs.TEST_PASSWORD }}"}'
+              docker run --rm --network private curlimages/curl:latest \
+                curl -v -X POST 'http://${{ needs.setup.outputs.PR_ID }}-flow-core:3002/auth/register' -H 'Content-Type: application/json' -d '{"email": "${{ needs.setup.outputs.TEST_USER }}","password": "${{ needs.setup.outputs.TEST_PASSWORD }}"}'
+              exit 0
+            fi
+            echo "Waiting for stop.txt"
+            sleep 1m
+          done
+      - id: config
+        name: Get/Generate config
+        run: |
+          echo Get env vars:
+          echo  "${{ secrets.gh_token }}" | gh auth login --with-token
+          gh variable get PR --repo apifornia/watcher > .${{ needs.setup.outputs.PR_ID }}.env
+          ls -lah
+          
+          echo Setting unique id
+          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' .${{ needs.setup.outputs.PR_ID }}.env
+          
+          echo Adding login creds
+          echo "CYPRESS_USER_LOGIN=${{ needs.setup.outputs.TEST_USER }}" >> .${{ needs.setup.outputs.PR_ID }}.env
+          echo "CYPRESS_USER_PASSWORD=${{ needs.setup.outputs.TEST_PASSWORD }}" >> .${{ needs.setup.outputs.PR_ID }}.env
+          
+          ENV_FILE=($(pwd)/.${{ needs.setup.outputs.PR_ID }}.env)
+          echo $ENV_FILE
+          cat $ENV_FILE
+          echo "ENV_FILE=${ENV_FILE}" >> $GITHUB_OUTPUT
+      - name: Wait
+        run: |
+          pwd
+          while :
+          do 
+            if [[ -e ./stop.txt ]]; then
+              echo "Exiting"
+              rm stop.txt
+              exit 0
+            fi
+            echo "Waiting for stop.txt"
+            sleep 1m
+          done
+      - name: Clone watcher
+        uses: actions/checkout@v4
+        with:
+          repository: apifornia/watcher
+          ref: main
+          path: ${{ needs.setup.outputs.PR_ID }}_watcher
+          token: ${{ secrets.gh_token }}
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: E2E tests
+        uses: apifornia/github-actions/watcher-action@main
+        with:
+          runs_on: apifornia-builder
+          env_file: ${{ steps.config.outputs.ENV_FILE }}
+          folder: ${{ needs.setup.outputs.PR_ID }}_watcher
+          
+  # ============
+  # APPS cleanup
+  # ============
+  wipe-apps:
+    needs: [setup,infra,frontend-up,apps,tests]
+    if: ${{ always() }}
+    runs-on: apifornia-builder
+    strategy:
+      #max-parallel: 1
+      matrix:
+        include:
+          - app: flow-core
+            folder: docker/compose/pr
+            suffix: _
+          - app: worker-rust
+            folder: docker/compose/pr
+            suffix: _
+          - app: wizard
+            folder: chamber/docker/compose/pr
+            suffix: chamber
+          - app: wizard
+            folder: spelloom/docker/compose/pr
+            suffix: spelloom
+    steps:
+      - name: Clone ${{ matrix.app }}
+        uses: actions/checkout@v4
+        with:
+          repository: apifornia/${{ matrix.app }}
+          ref: pr
+          path: ${{ matrix.app }}_${{ matrix.suffix }}
+          token: ${{ secrets.gh_token }}
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: github
+          password: ${{ secrets.gh_token }}
+      - name: Cleanup ${{ matrix.app }}
+        run: |
+          echo app: ${{ matrix.app }}
+          echo folder: ${{ matrix.app }}
+          echo suffix: ${{ matrix.suffix }}
+          echo =============================================
+          cd ${{ matrix.app }}_${{ matrix.suffix }}/${{ matrix.folder }}
+          pwd
+          
+          echo Get env vars:
+          echo  "${{ secrets.gh_token }}" | gh auth login --with-token
+          gh variable get PR --repo apifornia/${{ matrix.app }} > .env
+          ls -lah
+          
+          echo Setting unique id
+          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' docker-compose.yml
+
+          if [ "${{ matrix.app }}" == "${{ needs.setup.outputs.CALLER_REPO_NAME }}" ]; then
+            if [ "${{ matrix.suffix }}" == "_" ]; then
+              echo Replacing image for app "${{ matrix.app }}" in .env
+              sed -i -e 's~IMAGE_NAME=.*~IMAGE_NAME=${{ needs.setup.outputs.PR_REPO_IMAGE }}~g' .env
+            fi
+            if [ "${{ matrix.suffix }}" != "_" ]; then
+              echo Replacing image for app "${{ matrix.app }}" in docker-compose.yml
+              sed -i -e 's~:latest~:${{ needs.setup.outputs.PR_ID }}~g' docker-compose.yml
+            fi
+          fi
+          
+          echo Cleanup ${{ matrix.app }}
+          docker compose down -v || true
+
+  # =============
+  # FRONTEND stop
+  # =============
+  frontend-down:
+    needs: [setup,infra,frontend-up,apps,tests,wipe-apps]
+    #if: "${{ needs.setup.outputs.CALLER_REPO_NAME != 'flow-editor-vue3' }}"
+    if: ${{ always() }}
+    runs-on: apifornia-builder
+    steps:
+      - name: Clone ${{ matrix.app }}
+        uses: actions/checkout@v4
+        with:
+          repository: apifornia/flow-editor-vue3
+          ref: develop
+          path: flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}
+          token: ${{ secrets.gh_token }}
+      - name: Get env file
+        run: |
+          echo Get env vars:
+          echo  "${{ secrets.gh_token }}" | gh auth login --with-token
+          gh variable get PR --repo apifornia/flow-editor-vue3 > flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env
+          
+          echo Setting unique id and add image name
+          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env
+          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/docker/compose/pr/docker-compose.yml
+          echo "IMAGE_NAME=${{ needs.frontend-up.outputs.IMAGE_ID }}" >> flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env
+      - name: Shut down
+        run: >
+          docker compose --env-file flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env -f flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/docker/compose/pr/docker-compose.yml down || true
+
+
+  # =============
+  # INFRA cleanup
+  # =============
+  wipe-infra:
+    needs: [setup,infra,apps,tests,wipe-apps,frontend-down]
+    if: ${{ always() }}
+    runs-on: apifornia-builder
+    strategy:
+      matrix:
+        app:
+          - traefik
+          - kafka
+          - mongo
+          - postgres
+          - redis
+    steps:
+      - name: Clone infra
+        uses: actions/checkout@v4
+        with:
+          repository: apifornia/infrastructure
+          #ref: main
+          path: ${{ matrix.app }}
+          token: ${{ secrets.gh_token }}
+      - name: Cleanup ${{ matrix.app }}
+        run: |
+          echo app: ${{ matrix.app }}
+          cd ${{ matrix.app }}/docker-compose/pr/${{ matrix.app }}
+          pwd
+          ls -lah
+          
+          echo Setting unique id
+          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' docker-compose.yml
+          
+          echo Cleanup ${{ matrix.app }}
+          docker compose down -v || true
