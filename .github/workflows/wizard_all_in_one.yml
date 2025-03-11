@@ -22,43 +22,12 @@ jobs:
     runs-on: apifornia-builder
     outputs:
       CALLER_REPO_NAME: ${{ steps.setup.outputs.CALLER_REPO_NAME }}
-      RUNNER: ${{ steps.setup.outputs.RUNNER }}
-      TAG: ${{ steps.setup.outputs.TAG }}
-      BASE_DOMAIN: ${{ steps.setup.outputs.BASE_DOMAIN }}
+      DEPLOY_RUNNER: ${{ steps.setup.outputs.DEPLOY_RUNNER }}
+      EXTRA_TAG: ${{ steps.setup.outputs.EXTRA_TAG }}
     steps:
       - id: setup
-        name: Configuration setup
-        run: |
-            split=(${GITHUB_REPOSITORY//\// })
-            echo "CALLER_REPO_NAME=${split[1]}" >> $GITHUB_OUTPUT
-            
-            if [ ${GITHUB_REF_TYPE} == 'tag' ]; then
-              if [ ${GITHUB_REF_NAME} == 'dev' ]; then
-                echo "TAG=dev" >> $GITHUB_OUTPUT
-                echo "RUNNER=apifornia-dev" >> $GITHUB_OUTPUT
-                OK="yes"
-              fi
-              if [ ${GITHUB_REF_NAME} == 'prod' ]; then
-                echo "TAG=dev" >> $GITHUB_OUTPUT
-                echo "RUNNER=apifornia-prod" >> $GITHUB_OUTPUT
-                OK="yes"
-              fi
-            fi
-            
-            if [ ${GITHUB_REF_TYPE} == 'branch' ]; then
-              if [ ${GITHUB_REF_NAME} == 'develop' ]; then
-                echo "TAG=dev" >> $GITHUB_OUTPUT
-                echo "RUNNER=apifornia-dev" >> $GITHUB_OUTPUT
-                OK="yes"
-              fi
-            fi
-            
-            if [ ${OK} == 'yes' ]; then
-              echo "All good"
-            else
-              echo "ERROR: deployment can't proceed"
-              exit 1
-            fi
+        name: Setup
+        uses: apifornia/github-actions/setup-logic@main
 
   build-common:
     runs-on: apifornia-builder
@@ -229,7 +198,7 @@ jobs:
           images: ghcr.io/${{ github.repository }}-chamber
           tags: |
             type=raw,value=${{ github.sha }}
-            type=raw,value=latest
+            type=raw,value=${{ needs.setup.outputs.EXTRA_TAG }}
             
       - name: Docker metadata Spelloom
         id: meta-spelloom
@@ -238,7 +207,7 @@ jobs:
           images: ghcr.io/${{ github.repository }}-spelloom
           tags: |
             type=raw,value=${{ github.sha }}
-            type=raw,value=latest
+            type=raw,value=${{ needs.setup.outputs.EXTRA_TAG }}
             
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
@@ -270,7 +239,7 @@ jobs:
 
   compose-up:
     needs: [setup,push]
-    runs-on: ${{ needs.setup.outputs.RUNNER }}
+    runs-on: ${{ needs.setup.outputs.DEPLOY_RUNNER }}
     strategy:
       matrix:
         sub_project: [ chamber, spelloom ]
