@@ -18,6 +18,11 @@ jobs:
   test:
     runs-on: ${{ inputs.runs_on }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
       - uses: actions/setup-node@v3
         with:
           node-version: 18
@@ -25,33 +30,9 @@ jobs:
       - name: Generate .env file
         run: echo "${{ secrets.dev }}" > dev.env && echo "${{ secrets.prod }}" > prod.env
 
-      - name: tests
-        run: |
-          cd ${{ inputs.folder }}
-          npm install
-          # CLEANUP
-          docker container rm ${RUNNER_NAME}-cypress || true
-          rm -rf /tmp/runner/work/cypress_save/ || true && mkdir -p /tmp/runner/work/cypress_save/ || true
-          # RUN TESTS
-          docker run \
-            --name ${RUNNER_NAME}-cypress \
-            --env-file ${{ inputs.env_file }} \
-            -v ${LOCAL_FOLDER}/work/watcher/watcher:/e2e \
-            -w /e2e \
-            cypress/included:latest \
-            --browser  firefox \
-            --headless || true
-          # POST ACTIONS
-          docker logs ${RUNNER_NAME}-cypress | ansi2html > /tmp/runner/work/cypress_save/log.html
-          docker logs ${RUNNER_NAME}-cypress > /tmp/runner/work/cypress_save/log.txt
-          python3 getmsg.py /tmp/runner/work/cypress_save/log.txt > /tmp/runner/work/cypress_save/failing_flow.txt || true
-          cp -r ./cypress/screenshots/ /tmp/runner/work/cypress_save/ || true
-          echo "====cypress====="
-          ls ./cypress/**
-
-#      - id: tests
-#        name: E2E tests
-#        uses: apifornia/github-actions/watcher-action@main
-#        with:
-#          runs_on: apifornia-builder
-#          env_file: "${{ inputs.env }}.env"
+      - id: tests
+        name: E2E tests
+        uses: apifornia/github-actions/watcher-action@main
+        with:
+          runs_on: apifornia-builder
+          env_file: "${{ inputs.env }}.env"
