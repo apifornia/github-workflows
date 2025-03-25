@@ -35,3 +35,4 @@ jobs:
         uses: apifornia/github-actions/playwright-action@main
         with:
           runs_on: apifornia-builder
+          env_file: "${{ inputs.env }}.env"
