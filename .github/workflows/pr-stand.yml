@@ -269,6 +269,7 @@ jobs:
           env_file: ${{ steps.config.outputs.ENV_FILE }}
           folder: ${{ needs.setup.outputs.PR_ID }}_watcher
       - name: Wait
+        if: ${{ always() }}
         run: |
           pwd
           while :
