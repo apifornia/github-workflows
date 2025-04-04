@@ -241,6 +241,9 @@ jobs:
           docker compose up -d
       - name: Create user
         run: |
+          #kostyl
+          docker restart ${{ needs.setup.outputs.PR_ID }}-flow-core
+          
           while :
           do
             if [[ $(docker run -v --rm --network private curlimages/curl:latest curl -LI http://${{ needs.setup.outputs.PR_ID }}-flow-core:3002 -o /dev/null -w '%{http_code}\n' -s) == "404" ]]; then
