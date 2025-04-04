@@ -274,6 +274,7 @@ jobs:
           echo "ENV_FILE=${ENV_FILE}" >> $GITHUB_OUTPUT
       - name: Wait
         run: |
+          docker run -v --rm --network private curlimages/curl:latest curl -LI http://${{ needs.setup.outputs.PR_ID }}-waiter:8080?action=telegram -o /dev/null -s
           pwd
           while :
           do 
@@ -304,6 +305,7 @@ jobs:
       - name: Wait
         if: ${{ failure() }}
         run: |
+          docker run -v --rm --network private curlimages/curl:latest curl -LI http://${{ needs.setup.outputs.PR_ID }}-waiter:8080?action=telegram -o /dev/null -s
           pwd
           while :
           do 
