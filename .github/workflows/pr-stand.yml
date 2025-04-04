@@ -215,10 +215,11 @@ jobs:
           token: ${{ secrets.gh_token }}
       - name: Configure and run Waiter
         run: |
+          mkdir STOPS || true
+          FULL_LOCAL_PATH2=$(pwd | sed "s~/tmp/runner~${LOCAL_FOLDER}~")
+          
           cd waiter/docker-compose/pr/waiter
           pwd
-
-          mkdir STOPS || true
 
           echo Create .env file
           echo "STOP_FILENAME=stop__${{ needs.setup.outputs.PR_ID }}" > .env
@@ -230,6 +231,7 @@ jobs:
 
           FULL_LOCAL_PATH=$(pwd | sed "s~/tmp/runner~${LOCAL_FOLDER}~")
           sed -i "s~<local-folder>~$FULL_LOCAL_PATH~" docker-compose.yml || true
+          sed -i "s~<local-folder2>~$FULL_LOCAL_PATH2~" docker-compose.yml || true
           
           echo Removing old containers
           docker compose down -v || true
