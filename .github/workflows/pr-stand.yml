@@ -216,6 +216,7 @@ jobs:
       - name: Configure and run Waiter
         run: |
           mkdir STOPS || true
+          chmod 777 STOPS || true
           FULL_LOCAL_PATH2=$(pwd | sed "s~/tmp/runner~${LOCAL_FOLDER}~")
           
           cd waiter/docker-compose/pr/waiter
@@ -281,7 +282,7 @@ jobs:
               rm stop.txt
               exit 0
             fi
-            echo "Waiting for stop.txt"
+            echo "Waiting for - stop__${{ needs.setup.outputs.PR_ID }}"
             sleep 30s
           done
       - name: Clone watcher
@@ -301,7 +302,7 @@ jobs:
           env_file: ${{ steps.config.outputs.ENV_FILE }}
           folder: ${{ needs.setup.outputs.PR_ID }}_watcher
       - name: Wait
-        if: ${{ always() }}
+        if: ${{ failure() }}
         run: |
           pwd
           while :
@@ -311,7 +312,7 @@ jobs:
               rm stop.txt
               exit 0
             fi
-            echo "Waiting for stop.txt"
+            echo "Waiting for - stop__${{ needs.setup.outputs.PR_ID }}"
             sleep 30s
           done
       - name: Stop Waiter
