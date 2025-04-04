@@ -205,16 +205,43 @@ jobs:
   tests:
     needs: [setup,infra,frontend-up,apps]
     runs-on: apifornia-builder
-#    outputs:
-#      WATCHER_ENV_FILE: ${{ steps.config.outputs.ENV_FILE }}
     steps:
+      - name: Clone Waiter
+        uses: actions/checkout@v4
+        with:
+          repository: apifornia/infrastructure
+          #ref: main
+          path: waiter
+          token: ${{ secrets.gh_token }}
+      - name: Configure and run Waiter
+        run: |
+          cd waiter/docker-compose/pr/waiter
+          pwd
+
+          mkdir STOPS || true
+
+          echo Create .env file
+          echo "STOP_FILENAME=stop__${{ needs.setup.outputs.PR_ID }}" > .env
+          echo "TELEGRAM_BOT=${{ vars.TELEGRAM_BOT }}" >> .env
+          echo "TELEGRAM_CHANNEL=${{ vars.TELEGRAM_CHANNEL }}" >> .env
+                    
+          echo Setting unique id
+          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' docker-compose.yml
+
+          FULL_LOCAL_PATH=$(pwd | sed "s~/tmp/runner~${LOCAL_FOLDER}~")
+          sed -i "s~<local-folder>~$FULL_LOCAL_PATH~" docker-compose.yml || true
+          
+          echo Removing old containers
+          docker compose down -v || true
+          
+          echo Starting service
+          docker compose up -d
       - name: Create user
         run: |
           while :
           do
             if [[ $(docker run -v --rm --network private curlimages/curl:latest curl -LI http://${{ needs.setup.outputs.PR_ID }}-flow-core:3002 -o /dev/null -w '%{http_code}\n' -s) == "404" ]]; then
               echo "Seems ready..."
-              sleep 1m
               # 1st user
               docker run --rm --network private curlimages/curl:latest \
                 curl -v -X POST 'http://${{ needs.setup.outputs.PR_ID }}-flow-core:3002/auth/register' -H 'Content-Type: application/json' -d '{"email": "${{ needs.setup.outputs.TEST_USER }}","password": "${{ needs.setup.outputs.TEST_PASSWORD }}"}'
@@ -224,7 +251,7 @@ jobs:
               exit 0
             fi
             echo "Waiting for service to come up..."
-            sleep 1m
+            sleep 10s
           done
       - id: config
         name: Get/Generate config
@@ -247,13 +274,13 @@ jobs:
           pwd
           while :
           do 
-            if [[ -e ./stop.txt ]]; then
+            if [[ -e ./STOPS/stop__${{ needs.setup.outputs.PR_ID }} ]]; then
               echo "Exiting"
               rm stop.txt
               exit 0
             fi
             echo "Waiting for stop.txt"
-            sleep 1m
+            sleep 30s
           done
       - name: Clone watcher
         uses: actions/checkout@v4
@@ -277,15 +304,22 @@ jobs:
           pwd
           while :
           do 
-            if [[ -e ./stop.txt ]]; then
+            if [[ -e ./STOPS/stop__${{ needs.setup.outputs.PR_ID }} ]]; then
               echo "Exiting"
               rm stop.txt
               exit 0
             fi
             echo "Waiting for stop.txt"
-            sleep 1m
+            sleep 30s
           done
-          
+      - name: Stop Waiter
+        if: ${{ always() }}
+        run: |
+          cd waiter/docker-compose/pr/waiter
+         
+          echo Removing old containers
+          docker compose down -v || true
+                    
   # ============
   # APPS cleanup
   # ============
