@@ -77,7 +77,7 @@ jobs:
           sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' docker-compose.yml
 
           FULL_LOCAL_PATH=$(pwd | sed "s~/tmp/runner~${LOCAL_FOLDER}~")
-          sed -i "s/<local-folder>/\${FULL_LOCAL_PATH}/" docker-compose.yml || true
+          sed -i "s/<local-folder>/\$$FULL_LOCAL_PATH}" docker-compose.yml || true
           
           echo Removing old containers
           docker compose down -v || true
