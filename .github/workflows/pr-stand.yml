@@ -279,8 +279,9 @@ jobs:
         run: |
           docker run -v --rm --network private curlimages/curl:latest curl -LI http://${{ needs.setup.outputs.PR_ID }}-waiter:8080?action=telegram -o /dev/null -s
           pwd
-          while :
-          do 
+          total_time=3600
+          elapsed=0
+          while [ $elapsed -lt $total_time ]; do
             if [[ -e ./STOPS/stop__${{ needs.setup.outputs.PR_ID }} ]]; then
               echo "Exiting"
               rm stop.txt
@@ -288,6 +289,7 @@ jobs:
             fi
             echo "Waiting for - stop__${{ needs.setup.outputs.PR_ID }}"
             sleep 30s
+            elapsed=$((elapsed + 30))
           done
       - name: Clone watcher
         uses: actions/checkout@v4
@@ -310,8 +312,9 @@ jobs:
         run: |
           docker run -v --rm --network private curlimages/curl:latest curl -LI http://${{ needs.setup.outputs.PR_ID }}-waiter:8080?action=telegram -o /dev/null -s
           pwd
-          while :
-          do 
+          total_time=3600
+          elapsed=0
+          while [ $elapsed -lt $total_time ]; do
             if [[ -e ./STOPS/stop__${{ needs.setup.outputs.PR_ID }} ]]; then
               echo "Exiting"
               rm stop.txt
@@ -319,6 +322,7 @@ jobs:
             fi
             echo "Waiting for - stop__${{ needs.setup.outputs.PR_ID }}"
             sleep 30s
+            elapsed=$((elapsed + 30))
           done
       - name: Stop Waiter
         if: ${{ always() }}
