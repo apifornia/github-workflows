@@ -194,6 +194,9 @@ jobs:
           
           echo Removing old containers
           docker compose down -v || true
+
+          cat .env
+          cat docker-compose.yml
           
           echo Starting service
           #docker compose pull
