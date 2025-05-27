@@ -206,39 +206,39 @@ jobs:
     needs: [setup,infra,frontend-up,apps]
     runs-on: apifornia-builder
     steps:
-      - name: Clone Waiter
-        uses: actions/checkout@v4
-        with:
-          repository: apifornia/infrastructure
-          #ref: main
-          path: waiter
-          token: ${{ secrets.gh_token }}
-      - name: Configure and run Waiter
-        run: |
-          mkdir STOPS || true
-          chmod 777 STOPS || true
-          FULL_LOCAL_PATH2=$(pwd | sed "s~/tmp/runner~${LOCAL_FOLDER}~")
+      # - name: Clone Waiter
+      #   uses: actions/checkout@v4
+      #   with:
+      #     repository: apifornia/infrastructure
+      #     #ref: main
+      #     path: waiter
+      #     token: ${{ secrets.gh_token }}
+      # - name: Configure and run Waiter
+      #   run: |
+      #     mkdir STOPS || true
+      #     chmod 777 STOPS || true
+      #     FULL_LOCAL_PATH2=$(pwd | sed "s~/tmp/runner~${LOCAL_FOLDER}~")
           
-          cd waiter/docker-compose/pr/waiter
-          pwd
+      #     cd waiter/docker-compose/pr/waiter
+      #     pwd
 
-          echo Create .env file
-          echo "STOP_FILENAME=stop__${{ needs.setup.outputs.PR_ID }}" > .env
-          echo "TELEGRAM_BOT=${{ vars.TELEGRAM_BOT }}" >> .env
-          echo "TELEGRAM_CHANNEL=${{ vars.TELEGRAM_CHANNEL }}" >> .env
+      #     echo Create .env file
+      #     echo "STOP_FILENAME=stop__${{ needs.setup.outputs.PR_ID }}" > .env
+      #     echo "TELEGRAM_BOT=${{ vars.TELEGRAM_BOT }}" >> .env
+      #     echo "TELEGRAM_CHANNEL=${{ vars.TELEGRAM_CHANNEL }}" >> .env
                     
-          echo Setting unique id
-          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' docker-compose.yml
+      #     echo Setting unique id
+      #     sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' docker-compose.yml
 
-          FULL_LOCAL_PATH=$(pwd | sed "s~/tmp/runner~${LOCAL_FOLDER}~")
-          sed -i "s~<local-folder>~$FULL_LOCAL_PATH~" docker-compose.yml || true
-          sed -i "s~<local-folder2>~$FULL_LOCAL_PATH2~" docker-compose.yml || true
+      #     FULL_LOCAL_PATH=$(pwd | sed "s~/tmp/runner~${LOCAL_FOLDER}~")
+      #     sed -i "s~<local-folder>~$FULL_LOCAL_PATH~" docker-compose.yml || true
+      #     sed -i "s~<local-folder2>~$FULL_LOCAL_PATH2~" docker-compose.yml || true
           
-          echo Removing old containers
-          docker compose down -v || true
+      #     echo Removing old containers
+      #     docker compose down -v || true
           
-          echo Starting service
-          docker compose up -d
+      #     echo Starting service
+      #     docker compose up -d
       - name: Create user
         run: |
           #kostyl
@@ -307,30 +307,30 @@ jobs:
           runs_on: apifornia-builder
           env_file: ${{ steps.config.outputs.ENV_FILE }}
           folder: ${{ needs.setup.outputs.PR_ID }}_watcher
-      - name: Wait
-        if: ${{ failure() }}
-        run: |
-          docker run -v --rm --network private curlimages/curl:latest curl -LI http://${{ needs.setup.outputs.PR_ID }}-waiter:8080?action=telegram -o /dev/null -s
-          pwd
-          total_time=3600
-          elapsed=0
-          while [ $elapsed -lt $total_time ]; do
-            if [[ -e ./STOPS/stop__${{ needs.setup.outputs.PR_ID }} ]]; then
-              echo "Exiting"
-              rm ./STOPS/stop__${{ needs.setup.outputs.PR_ID }}
-              exit 0
-            fi
-            echo "Waiting for - stop__${{ needs.setup.outputs.PR_ID }}"
-            sleep 30s
-            elapsed=$((elapsed + 30))
-          done
-      - name: Stop Waiter
-        if: ${{ always() }}
-        run: |
-          cd waiter/docker-compose/pr/waiter
+      # - name: Wait
+      #   if: ${{ failure() }}
+      #   run: |
+      #     docker run -v --rm --network private curlimages/curl:latest curl -LI http://${{ needs.setup.outputs.PR_ID }}-waiter:8080?action=telegram -o /dev/null -s
+      #     pwd
+      #     total_time=3600
+      #     elapsed=0
+      #     while [ $elapsed -lt $total_time ]; do
+      #       if [[ -e ./STOPS/stop__${{ needs.setup.outputs.PR_ID }} ]]; then
+      #         echo "Exiting"
+      #         rm ./STOPS/stop__${{ needs.setup.outputs.PR_ID }}
+      #         exit 0
+      #       fi
+      #       echo "Waiting for - stop__${{ needs.setup.outputs.PR_ID }}"
+      #       sleep 30s
+      #       elapsed=$((elapsed + 30))
+      #     done
+      # - name: Stop Waiter
+      #   if: ${{ always() }}
+      #   run: |
+      #     cd waiter/docker-compose/pr/waiter
          
-          echo Removing old containers
-          docker compose down -v || true
+      #     echo Removing old containers
+      #     docker compose down -v || true
                     
   # ============
   # APPS cleanup
