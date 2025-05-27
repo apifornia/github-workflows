@@ -275,22 +275,22 @@ jobs:
           
           ENV_FILE=($(pwd)/.${{ needs.setup.outputs.PR_ID }}.env)
           echo "ENV_FILE=${ENV_FILE}" >> $GITHUB_OUTPUT
-      - name: Wait
-        run: |
-          docker run -v --rm --network private curlimages/curl:latest curl -LI http://${{ needs.setup.outputs.PR_ID }}-waiter:8080?action=telegram -o /dev/null -s
-          pwd
-          total_time=3600
-          elapsed=0
-          while [ $elapsed -lt $total_time ]; do
-            if [[ -e ./STOPS/stop__${{ needs.setup.outputs.PR_ID }} ]]; then
-              echo "Exiting"
-              rm ./STOPS/stop__${{ needs.setup.outputs.PR_ID }}
-              exit 0
-            fi
-            echo "Waiting for - stop__${{ needs.setup.outputs.PR_ID }}"
-            sleep 30s
-            elapsed=$((elapsed + 30))
-          done
+      # - name: Wait
+      #   run: |
+      #     docker run -v --rm --network private curlimages/curl:latest curl -LI http://${{ needs.setup.outputs.PR_ID }}-waiter:8080?action=telegram -o /dev/null -s
+      #     pwd
+      #     total_time=3600
+      #     elapsed=0
+      #     while [ $elapsed -lt $total_time ]; do
+      #       if [[ -e ./STOPS/stop__${{ needs.setup.outputs.PR_ID }} ]]; then
+      #         echo "Exiting"
+      #         rm ./STOPS/stop__${{ needs.setup.outputs.PR_ID }}
+      #         exit 0
+      #       fi
+      #       echo "Waiting for - stop__${{ needs.setup.outputs.PR_ID }}"
+      #       sleep 30s
+      #       elapsed=$((elapsed + 30))
+      #     done
       - name: Clone watcher
         uses: actions/checkout@v4
         with:
