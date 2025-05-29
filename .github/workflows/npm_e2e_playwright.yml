@@ -7,7 +7,8 @@ on:
         required: true
       env:
         type: string
-        required: false
+        default: "dev"
+        required: true
     secrets:
       dev:
         required: false
@@ -25,7 +26,7 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 22
 
       - name: Generate .env file
         run: echo "${{ secrets.dev }}" > dev.env && echo "${{ secrets.prod }}" > prod.env
