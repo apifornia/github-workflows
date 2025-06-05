@@ -9,12 +9,83 @@ jobs:
       - uses: actions/checkout@v3
       - uses: apifornia/github-actions/rust-toolchain@main
         with:
-          toolchain: 1.75.0
+          toolchain: 1.86.0
           components: "clippy"
+
+      - name: Cache APT packages
+        id: cache-apt
+        uses: actions/cache@v3
+        with:
+          path: |
+            /var/cache/apt/archives
+            /var/lib/apt/lists
+          key: ${{ runner.os }}-apt-${{ hashFiles('.github/workflows/worker-rust.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-workflow
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      
       - name: Install deps
         run: |
-          sudo apt-get -qq -y install pkg-config build-essential libssl-dev curl python3-dev 
+          sudo apt-get -qq -y update
+          sudo apt-get -qq -y install pkg-config build-essential libssl-dev curl zlib1g-dev libzstd-dev zstd clang
+      # - name: Configure sccache
+      #   uses: actions/github-script@v7
+      #   with:
+      #     script: |
+      #       core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+      #       core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+      # - name: Setup sccache
+      #   run: |
+      #     curl -s -L https://github.com/mozilla/sccache/releases/download/v0.10.0/sccache-dist-v0.10.0-x86_64-unknown-linux-musl.tar.gz | tar xvzf - sccache-dist-v0.10.0-x86_64-unknown-linux-musl/sccache-dist
+      #     mv sccache-dist-v0.10.0-x86_64-unknown-linux-musl/sccache-dist /usr/local/bin/sccache
+      #     echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
+      #     sccache --show-stats
       - name: Run clippy
         run: cargo clippy --workspace
+      - name: Cleanup docker compose containers
+        run: |
+          docker compose -f misc/ci-docker-compose.yaml stop
+          docker compose -f misc/ci-docker-compose.yaml rm -f
+          docker compose -f misc/ci-docker-compose.yaml build
+      - name: Setup Mongodb
+        run: |
+          docker compose -f misc/ci-docker-compose.yaml up -d mongo
+          echo "wait for mongodb to be ready"
+          ./misc/wait-for-it.sh 127.0.0.1:27027
+          docker compose -f misc/ci-docker-compose.yaml cp ./misc/mongo-user.js mongo:/opt/mongo-user.js
+          docker compose -f misc/ci-docker-compose.yaml exec mongo mongosh --port 27027 -u flowuser -p XXXXXXX --db flowcore /opt/mongo-user.js
+      - name: Setup python lambda
+        run: |
+          docker compose -f misc/ci-docker-compose.yaml ps
+          docker compose -f misc/ci-docker-compose.yaml up -d python-lambda
+          sleep 5
+          docker compose -f misc/ci-docker-compose.yaml ps
+          ./misc/wait-for-it.sh 127.0.0.1:8080
+          curl -v -XPOST "http://127.0.0.1:8080/2015-03-31/functions/function/invocations" -d '{"code": "import sys\ndef main(**kwargs): return sys.version"}'
       - name: Run tests
-        run: cargo test --workspace -- --test-threads=1
+        run: |
+          export RUST_LOG=debug
+          export WR__MONGO__URI="mongodb://flowuser:XXXXXXX@127.0.0.1:27027"
+          export AWS_DEFAULT_REGION='{"name": "local", "endpoint": "http://127.0.0.1:8080"}'
+          cargo test --workspace
+
+  post-tests:
+    if: always()
+    needs: [tests]
+    name: post-tests
+    runs-on: apifornia-builder
+    steps:
+      - uses: actions/checkout@v3
+      - name: Stop docker-compose services
+        run: |
+          docker compose -f misc/ci-docker-compose.yaml logs -t python-lambda
+          docker compose -f misc/ci-docker-compose.yaml stop mongo
+          docker compose -f misc/ci-docker-compose.yaml stop python-lambda
