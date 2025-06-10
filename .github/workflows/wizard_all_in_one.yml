@@ -5,13 +5,21 @@ on:
         type: string
         default: 'docker/images/dev/Dockerfile'
         required: false
-      compose_files:
-        type: string
-        default: 'does not work here :-('
-        required: false
       env_file:
         type: string
-        default: './.env'
+        default: '.env'
+        required: false
+      do_build:
+        type: boolean
+        default: true
+        required: false
+      do_build_push:
+        type: boolean
+        default: true
+        required: false
+      do_deploy:
+        type: boolean
+        default: true
         required: false
     secrets:
       env_vars:
@@ -32,6 +40,7 @@ jobs:
   build-common:
     runs-on: apifornia-builder
     needs: setup
+    if: "${{ inputs.do_build == true }}"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -52,6 +61,7 @@ jobs:
   pre-tests:
     runs-on: apifornia-builder
     needs: [setup,build-common]
+    if: "${{ inputs.do_build == true }}"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -108,6 +118,7 @@ jobs:
   tests:
     needs: [setup,pre-tests]
     runs-on: apifornia-builder
+    if: "${{ inputs.do_build == true }}"
     strategy:
       matrix:
         sub_project: [ chamber, spelloom ]
@@ -181,6 +192,7 @@ jobs:
 
   push:
     runs-on: apifornia-builder
+    if: "${{ inputs.do_deploy == true }}"
     needs: [setup,post-tests]
     steps:
       - name: Checkout
@@ -240,6 +252,7 @@ jobs:
   compose-up:
     needs: [setup,push]
     runs-on: ${{ needs.setup.outputs.DEPLOY_RUNNER }}
+    if: "${{ inputs.do_deploy == true }}"
     strategy:
       matrix:
         sub_project: [ chamber, spelloom ]
