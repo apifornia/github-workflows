@@ -190,6 +190,60 @@ jobs:
           --env-file ${{ inputs.env_file }}
           down || true
 
+  build:
+    runs-on: apifornia-builder
+    if: "${{ inputs.do_build == true && inputs.do_deploy == false }} "
+    needs: [setup,post-tests]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Generate .env file
+        run: echo "${{ secrets.env_vars }}" > ${{ inputs.env_file }}
+        
+      - name: Docker metadata Chamber
+        id: meta-chamber
+        uses: docker/metadata-action@v4
+        with:
+          images: ghcr.io/${{ github.repository }}-chamber
+          tags: |
+            type=raw,value=${{ github.sha }}
+            type=raw,value=${{ needs.setup.outputs.EXTRA_TAG }}
+            
+      - name: Docker metadata Spelloom
+        id: meta-spelloom
+        uses: docker/metadata-action@v4
+        with:
+          images: ghcr.io/${{ github.repository }}-spelloom
+          tags: |
+            type=raw,value=${{ github.sha }}
+            type=raw,value=${{ needs.setup.outputs.EXTRA_TAG }}
+            
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Push Chamber
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./chamber/docker/images/dev/Dockerfile
+          push: false
+          tags: ${{ steps.meta-chamber.outputs.tags }}
+          
+      - name: Push Spelloom
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./spelloom/docker/images/dev/Dockerfile
+          push: false
+          tags: ${{ steps.meta-spelloom.outputs.tags }}
+
   push:
     runs-on: apifornia-builder
     if: "${{ inputs.do_deploy == true }}"
@@ -244,10 +298,10 @@ jobs:
           push: true
           tags: ${{ steps.meta-spelloom.outputs.tags }}
           
-      - name: Cleanup
-        run: |
-          docker image rm -f ${{ steps.meta-chamber.outputs.tags }} || true
-          docker image rm -f ${{ steps.meta-spelloom.outputs.tags }} || true
+#      - name: Cleanup
+#        run: |
+#          docker image rm -f ${{ steps.meta-chamber.outputs.tags }} || true
+#          docker image rm -f ${{ steps.meta-spelloom.outputs.tags }} || true
 
   compose-up:
     needs: [setup,push]
