@@ -188,7 +188,7 @@ jobs:
             fi
             if [ "${{ matrix.suffix }}" != "_" ]; then
               echo Replacing image for app "${{ matrix.app }}" in docker-compose.yml
-              sed -i -e 's~:latest~:${{ needs.setup.outputs.PR_ID }}~g' docker-compose.yml
+              sed -i -e 's~:dev~:${{ needs.setup.outputs.PR_ID }}~g' docker-compose.yml
             fi
           fi
           
