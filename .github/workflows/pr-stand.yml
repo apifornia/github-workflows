@@ -97,10 +97,13 @@ jobs:
       IMAGE_ID: ${{ steps.front-build.outputs.imageid }}
     steps:
       - id: setup
+        name: Setup
         run: >
           if [ ${{ needs.setup.outputs.CALLER_REPO_NAME }} == 'flow-editor-vue3' ]; then
+            echo "BRANCH=${GITHUB_HEAD_REF}"
             echo "BRANCH=${GITHUB_HEAD_REF}" >> $GITHUB_OUTPUT
           else
+            echo "BRANCH=develop"
             echo "BRANCH=develop" >> $GITHUB_OUTPUT
           fi
       - name: Clone apifornia/flow-editor-vue3
