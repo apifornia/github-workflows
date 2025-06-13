@@ -92,15 +92,22 @@ jobs:
   frontend-up:
     needs: [setup,infra]
     runs-on: apifornia-builder
-    if: "${{ needs.setup.outputs.CALLER_REPO_NAME != 'flow-editor-vue3' }}"
+    #if: "${{ needs.setup.outputs.CALLER_REPO_NAME != 'flow-editor-vue3' }}"
     outputs:
       IMAGE_ID: ${{ steps.front-build.outputs.imageid }}
     steps:
-      - name: Clone ${{ matrix.app }}
+      - id: setup
+        run: >
+          if [ ${{ needs.setup.outputs.CALLER_REPO_NAME }} == 'flow-editor-vue3' ]; then
+            echo "BRANCH=${GITHUB_HEAD_REF}" >> $GITHUB_OUTPUT
+          else
+            echo "BRANCH=develop" >> $GITHUB_OUTPUT
+          fi
+      - name: Clone apifornia/flow-editor-vue3
         uses: actions/checkout@v4
         with:
           repository: apifornia/flow-editor-vue3
-          ref: develop
+          ref: ${{ steps.setup.outputs.BRANCH }}
           path: flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}
           token: ${{ secrets.gh_token }}
       - name: Get env file
@@ -112,7 +119,6 @@ jobs:
           echo Setting unique id
           sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env
           sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/docker/compose/pr/docker-compose.yml
-          cat flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env
       - id: front-build
         name: Build
         uses: docker/build-push-action@v4
@@ -189,7 +195,6 @@ jobs:
             if [ "${{ matrix.suffix }}" != "_" ]; then
               echo Replacing image for app "${{ matrix.app }}" in docker-compose.yml
               sed -i -e 's~:dev~:${{ needs.setup.outputs.PR_ID }}~g' docker-compose.yml
-              cat docker-compose.yml
             fi
           fi
           
