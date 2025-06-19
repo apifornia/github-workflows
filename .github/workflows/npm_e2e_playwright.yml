@@ -4,7 +4,7 @@ on:
       runs_on:
         type: string
         default: "apifornia-builder"
-        required: true
+        required: false
       env:
         type: string
         default: "dev"
