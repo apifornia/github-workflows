@@ -103,7 +103,7 @@ jobs:
 
       - name: Generate .env file
         run: >
-          echo "${{ secrets.env_vars }}" > ${{ inputs.env_file }}
+          echo "${{ secrets.env_vars }}" > deploy/chart/${{ inputs.env_file }}
           sed -i s/=/:/g ${{ inputs.env_file }}
 
       - name: Helm install
@@ -112,7 +112,7 @@ jobs:
           CI_PROJECT_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}
           ENV_VARS: ${{ inputs.env_vars }}
         run: >
-          helm upgrade "${{ needs.setup.outputs.CALLER_REPO_NAME }}" ./deploy/charts
+          helm upgrade "${{ needs.setup.outputs.CALLER_REPO_NAME }}" ./deploy/chart
           --install
           --atomic
           --namespace "${{ needs.setup.outputs.CALLER_REPO_NAME }}"
