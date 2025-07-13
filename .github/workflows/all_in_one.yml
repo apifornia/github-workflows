@@ -94,8 +94,8 @@ jobs:
           set +e
           NS_EXISTS=$(kubectl get ns ${{ needs.setup.outputs.CALLER_REPO_NAME }})
           if [ "$NS_EXISTS" != "0" ]; then
-            kubectl create ns ${{ needs.setup.outputs.CALLER_REPO_NAME }}
-            kubectl create secret docker-registry ghcr-io --docker-server=https://ghcr.io --docker-username=github --docker-password=$(gh variable get REGISTRY_TOKEN) --docker-email=devops@apifornia.com -n ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+            kubectl create ns ${{ needs.setup.outputs.CALLER_REPO_NAME }} || true
+            kubectl create secret docker-registry ghcr-io --docker-server="ghcr.io" --docker-username="github" --docker-password="$(gh variable get REGISTRY_TOKEN)" -n ${{ needs.setup.outputs.CALLER_REPO_NAME }}
             echo "Namespace and pullsecret created"
           else
             exit 0
