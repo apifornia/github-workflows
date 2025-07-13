@@ -39,7 +39,7 @@ jobs:
       CALLER_REPO_NAME: ${{ steps.setup.outputs.CALLER_REPO_NAME }}
       DEPLOY_RUNNER: ${{ steps.setup.outputs.DEPLOY_RUNNER }}
       EXTRA_TAG: ${{ steps.setup.outputs.EXTRA_TAG }}
-      TAGS: ${{ steps.meta.outputs.tags }}
+      TAGS: ${{ steps.save_tag.outputs.TAGS }}
     steps:
       - id: setup
         name: Setup
@@ -72,6 +72,11 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Save Tag
+        id: save_tag
+        run: |
+          echo "TAGS=${{ steps.meta.outputs.tags }}" >> $GITHUB_OUTPUT
       
       - name: Build and push
         uses: docker/build-push-action@v4
@@ -97,7 +102,8 @@ jobs:
           NS_EXISTS=$(kubectl get ns ${{ needs.setup.outputs.CALLER_REPO_NAME }})
           if [ "$NS_EXISTS" != "0" ]; then
             kubectl create ns ${{ needs.setup.outputs.CALLER_REPO_NAME }} || true
-            echo  "${{ secrets.gh_token }}" | gh auth login --with-token
+            #echo  "${{ secrets.gh_token }}" | gh auth login --with-token
+            echo  "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
             DOCKER_PASSWORD=$(gh variable get REGISTRY_TOKEN)
             kubectl create secret docker-registry ghcr-io --docker-server="ghcr.io" --docker-username="github" --docker-password="${DOCKER_PASSWORD}" -n ${{ needs.setup.outputs.CALLER_REPO_NAME }}
             echo "Namespace and pullsecret created"
@@ -108,7 +114,7 @@ jobs:
       - name: Generate .env file
         run: >
           echo "${{ secrets.env_vars }}" > deploy/chart/${{ inputs.env_file }}
-          sed -i s/=/:/g ${{ inputs.env_file }}
+          sed -i s/=/: /g deploy/chart/${{ inputs.env_file }}
 
       - name: Helm install
         env:
