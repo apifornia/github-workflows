@@ -100,19 +100,20 @@ jobs:
             exit 0
           fi
 
-      - name: Lint and show compose manifest
+      - name: Generate .env file
+        run: >
+          echo "${{ secrets.env_vars }}" > ${{ inputs.env_file }}
+          sed -i s/=/:/g ${{ inputs.env_file }}
+
+      - name: Helm install
         env:
           IMAGE_NAME: ${{ steps.meta.outputs.tags }}
           CI_PROJECT_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}
           ENV_VARS: ${{ inputs.env_vars }}
         run: >
-          helm -v
-
-# commented because docker image cleanup job runs on the server each week
-#  post:
-#    runs-on: apifornia-builder
-#    needs: [setup,build,deploy]
-#    steps:
-#      - name: Cleanup
-#        run: |
-#          docker image rm -f ${{ steps.meta.outputs.tags }} || true
+          helm upgrade "${{ needs.setup.outputs.CALLER_REPO_NAME }}" ./deploy/charts
+          --install
+          --atomic
+          --namespace "${{ needs.setup.outputs.CALLER_REPO_NAME }}"
+          --set image="${{ steps.meta.outputs.tags }}"
+          --set git_commit="${GITHUB_SHA}"
