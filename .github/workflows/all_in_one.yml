@@ -3,11 +3,11 @@ on:
     inputs:
       docker_file:
         type: string
-        default: 'docker/images/dev/Dockerfile'
+        default: 'deploy/docker/images/dev/Dockerfile'
         required: false
       compose_file:
         type: string
-        default: 'docker/compose/dev/docker-compose.yml'
+        default: 'deploy/docker/compose/dev/docker-compose.yml'
         required: false
       env_file:
         type: string
