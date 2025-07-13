@@ -143,18 +143,26 @@ jobs:
           --env-file ${{ inputs.env_file }}
           up --detach
 
-  # deploy-k8s:
-  #   needs: [setup,build]
-  #   runs-on: ${{ needs.setup.outputs.DEPLOY_RUNNER }}-k8s
-  #   if: "${{ inputs.do_deploy == true }}"
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v3
-  #       with:
-  #         fetch-depth: 1
+  deploy-k8s:
+    needs: [setup,build]
+    runs-on: ${{ needs.setup.outputs.DEPLOY_RUNNER }}-k8s
+    if: "${{ inputs.do_deploy == true }}"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
 
-  #     - name: Generate .env file
-  #       run: echo "${{ secrets.env_vars }}" > ${{ inputs.env_file }}
+      - name: Namespace check
+        run: |
+          NS_EXISTS=$(kubectl get ns ${{ needs.setup.outputs.CALLER_REPO_NAME }})
+          if [ "$NS_EXISTS" != "0" ]; then
+            kubectl create ns ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+            kubectl create secret docker-registry ghcr-io --docker-server=https://ghcr.io --docker-username=github --docker-password=$(gh variable get REGISTRY_TOKEN) --docker-email=devops@apifornia.com -n ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+            echo "Namespace and pullsecret created"
+          else
+            exit 0
+          fi
       
   #     - name: Get Docker metadata
   #       id: meta
