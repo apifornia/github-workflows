@@ -39,7 +39,6 @@ jobs:
       CALLER_REPO_NAME: ${{ steps.setup.outputs.CALLER_REPO_NAME }}
       DEPLOY_RUNNER: ${{ steps.setup.outputs.DEPLOY_RUNNER }}
       EXTRA_TAG: ${{ steps.setup.outputs.EXTRA_TAG }}
-      TAGS: ${{ steps.meta.outputs.tags }}
     steps:
       - id: setup
         name: Setup
@@ -48,6 +47,8 @@ jobs:
   build:
     runs-on: apifornia-builder
     if: "${{ inputs.do_build == true }}"
+    outputs:
+      TAGS: ${{ steps.meta.outputs.tags }}
     needs: setup
     steps:
       - name: Checkout
@@ -101,7 +102,7 @@ jobs:
           set +e
           NS_EXISTS=$(kubectl get ns ${{ needs.setup.outputs.CALLER_REPO_NAME }})
           if [ "$NS_EXISTS" != "0" ]; then
-            kubectl create ns ${{ needs.setup.outputs.CALLER_REPO_NAME }} || true
+            kubectl create ns ${{ needs.setup.outputs.CALLER_REPO_NAME }}
             echo  "${{ secrets.gh_token }}" | gh auth login --with-token
             DOCKER_PASSWORD=$(gh variable get REGISTRY_TOKEN)
             kubectl create secret docker-registry ghcr-io --docker-server="ghcr.io" --docker-username="github" --docker-password="${DOCKER_PASSWORD}" -n ${{ needs.setup.outputs.CALLER_REPO_NAME }}
@@ -125,5 +126,5 @@ jobs:
           --install
           --atomic
           --namespace "${{ needs.setup.outputs.CALLER_REPO_NAME }}"
-          --set image="${{ needs.setup.outputs.TAGS }}"
+          --set image="${{ needs.build.outputs.TAGS }}"
           --set git_commit="${GITHUB_SHA}"
