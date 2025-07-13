@@ -29,6 +29,8 @@ on:
     secrets:
       env_vars:
         required: false
+      gh_token:
+        required: false
 
 jobs:
   setup:
