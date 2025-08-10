@@ -119,10 +119,9 @@ jobs:
       - name: Helm install
         env:
           IMAGE_NAME: ${{ steps.meta.outputs.tags }}
-          CI_PROJECT_NAME: ${{ needs.setup.outputs.CALLER_REPO_NAME }}
-          ENV_VARS: ${{ inputs.env_vars }}
         run: >
           helm upgrade "${{ needs.setup.outputs.CALLER_REPO_NAME }}" ./deploy/chart
+          -f ./deploy/chart/values-${{ needs.setup.outputs.EXTRA_TAG }}.yml
           --install
           --atomic
           --namespace "${{ needs.setup.outputs.CALLER_REPO_NAME }}"
