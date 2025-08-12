@@ -99,17 +99,18 @@ jobs:
 
       - name: Namespace check
         run: |
-          #NS_EXISTS=$(kubectl get ns ${{ needs.setup.outputs.CALLER_REPO_NAME }})
-          #if [ "$NS_EXISTS" != "0" ]; then
+          set +e
+          NS_EXISTS=$(kubectl get ns ${{ needs.setup.outputs.CALLER_REPO_NAME }})
+          if [ "$NS_EXISTS" != "0" ]; then
             chmod +x kubectl
-            kubectl create ns ${{ needs.setup.outputs.CALLER_REPO_NAME }} || true
+            kubectl create ns ${{ needs.setup.outputs.CALLER_REPO_NAME }}
             echo  "${{ secrets.gh_token }}" | gh auth login --with-token
             DOCKER_PASSWORD=$(gh variable get REGISTRY_TOKEN)
-            kubectl create secret docker-registry ghcr-io --docker-server="ghcr.io" --docker-username="github" --docker-password="${DOCKER_PASSWORD}" -n ${{ needs.setup.outputs.CALLER_REPO_NAME }} || true
-            echo "Namespace and pullsecret created" || true
-          #else
-            #exit 0
-          #fi
+            kubectl create secret docker-registry ghcr-io --docker-server="ghcr.io" --docker-username="github" --docker-password="${DOCKER_PASSWORD}" -n ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+            echo "Namespace and pullsecret created"
+          else
+            exit 0
+          fi
 
       - name: Generate .env file
         run: |
