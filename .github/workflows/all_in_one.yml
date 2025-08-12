@@ -114,7 +114,7 @@ jobs:
       - name: Generate .env file
         run: |
           echo "${{ secrets.env_vars }}" > deploy/chart/secrets
-          sed -i 's/=/: /'g deploy/chart/secrets
+          #sed -i 's/=/: /'g deploy/chart/secrets
 
       - name: Helm install
         env:
