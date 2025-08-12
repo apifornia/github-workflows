@@ -102,7 +102,7 @@ jobs:
           set +e
           NS_EXISTS=$(kubectl get ns ${{ needs.setup.outputs.CALLER_REPO_NAME }})
           if [ "$NS_EXISTS" != "0" ]; then
-            chmod +x kubectl
+            chmod +x /actions-runner/kubectl
             kubectl create ns ${{ needs.setup.outputs.CALLER_REPO_NAME }}
             echo  "${{ secrets.gh_token }}" | gh auth login --with-token
             DOCKER_PASSWORD=$(gh variable get REGISTRY_TOKEN)
