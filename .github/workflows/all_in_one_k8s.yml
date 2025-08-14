@@ -27,7 +27,9 @@ on:
         required: false
 
     secrets:
-      env_vars:
+      build_vars:
+        required: false
+      deploy_vars:
         required: false
       gh_token:
         required: false
