@@ -59,7 +59,7 @@ jobs:
           fetch-depth: 1
 
       - name: Generate .env file
-        run: echo "${{ secrets.env_vars }}" > ${{ inputs.env_file }}
+        run: echo "${{ secrets.build_vars }}" > ${{ inputs.env_file }}
       
       - name: Get Docker metadata
         id: meta
@@ -116,8 +116,7 @@ jobs:
 
       - name: Generate .env file
         run: |
-          echo "${{ secrets.env_vars }}" > deploy/chart/secrets
-          #sed -i 's/=/: /'g deploy/chart/secrets
+          echo "${{ secrets.deploy_vars }}" > deploy/chart/secrets
 
       - name: Helm install
         env:
