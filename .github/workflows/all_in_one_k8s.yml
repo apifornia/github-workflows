@@ -113,7 +113,7 @@ jobs:
       - name: Generate .env file
         run: |
           echo "${{ secrets.deploy_vars }}" > deploy/chart/secrets
-          echo "APP_DATE: $(date '+%Y%m%d%H%M')" >> deploy/chart/secrets
+          echo "APP_BUILD_DATE: \"$(date '+%Y%m%d%H%M')\"" >> deploy/chart/secrets
 
       - name: Helm install
         env:
