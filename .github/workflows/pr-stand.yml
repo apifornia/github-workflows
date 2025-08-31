@@ -9,7 +9,7 @@ jobs:
   # SETUP
   # =====
   setup:
-    runs-on: apifornia-builder
+    runs-on: apifornia-dev-k8s
     outputs:
       CALLER_REPO_NAME: ${{ steps.setup.outputs.CALLER_REPO_NAME }}
       PR_REPO_IMAGE: ${{ steps.setup.outputs.PR_REPO_IMAGE }}
@@ -43,20 +43,20 @@ jobs:
             echo "PR_REPO_IMAGE=${PR_REPO_IMAGE}" >> $GITHUB_OUTPUT
             echo "TEST_USER=${TEST_USER}" >> $GITHUB_OUTPUT
             echo "TEST_PASSWORD=${TEST_PASSWORD}" >> $GITHUB_OUTPUT
+
+            kubectl create ns ${PR_ID}
   
   # ================
   # INFRA deployment
   # ================
   infra:
     needs: [setup]
-    runs-on: apifornia-builder
+    runs-on: apifornia-dev-k8s
     strategy:
       matrix:
         app:
-          - traefik
           - kafka
           - mongo
-          - postgres
           - redis
     steps:
       - name: Clone infra
@@ -64,26 +64,20 @@ jobs:
         with:
           repository: apifornia/infrastructure
           #ref: main
-          path: ${{ matrix.app }}
+          path: charts/${{ matrix.app }}
           token: ${{ secrets.gh_token }}
       - name: Update and run ${{ matrix.app }}
         run: |
           echo app: ${{ matrix.app }}
-          cd ${{ matrix.app }}/docker-compose/pr/${{ matrix.app }}
-          pwd
-          ls -lah
-          
-          echo Setting unique id
-          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' docker-compose.yml
+          cd charts/${{ matrix.app }}
 
-          FULL_LOCAL_PATH=$(pwd | sed "s~/tmp/runner~${LOCAL_FOLDER}~")
-          sed -i "s~<local-folder>~$FULL_LOCAL_PATH~" docker-compose.yml || true
+          helm dependency build
           
-          echo Removing old containers
-          docker compose down -v || true
-          
-          echo Starting service
-          docker compose up -d
+          helm upgrade "${{ matrix.app }}" ./ \
+          -f ./values-pr.yml \
+          --install \
+          --atomic \
+          --namespace "${{ needs.setup.outputs.PR_ID }}"
 
 
   # ========================
@@ -141,7 +135,7 @@ jobs:
   # ===============
   apps:
     needs: [setup,infra,frontend-up]
-    runs-on: apifornia-builder
+    runs-on: apifornia-dev-k8s
     strategy:
       max-parallel: 1
       matrix:
@@ -152,12 +146,9 @@ jobs:
           - app: worker-rust
             folder: docker/compose/pr
             suffix: _
-          - app: wizard
-            folder: chamber/docker/compose/pr
-            suffix: chamber
-          - app: wizard
-            folder: spelloom/docker/compose/pr
-            suffix: spelloom
+          - app: wand
+            folder: docker/compose/pr
+            suffix: _
     steps:
       - name: Clone ${{ matrix.app }}
         uses: actions/checkout@v4
@@ -213,7 +204,7 @@ jobs:
   # ======
   tests:
     needs: [setup,infra,frontend-up,apps]
-    runs-on: apifornia-builder
+    runs-on: apifornia-dev-k8s
     steps:
       # - name: Clone Waiter
       #   uses: actions/checkout@v4
@@ -340,138 +331,17 @@ jobs:
          
       #     echo Removing old containers
       #     docker compose down -v || true
-                    
-  # ============
-  # APPS cleanup
-  # ============
-  wipe-apps:
-    needs: [setup,infra,frontend-up,apps,tests]
-    if: ${{ always() }}
-    runs-on: apifornia-builder
-    strategy:
-      #max-parallel: 1
-      matrix:
-        include:
-          - app: flow-core
-            folder: docker/compose/pr
-            suffix: _
-          - app: worker-rust
-            folder: docker/compose/pr
-            suffix: _
-          - app: wizard
-            folder: chamber/docker/compose/pr
-            suffix: chamber
-          - app: wizard
-            folder: spelloom/docker/compose/pr
-            suffix: spelloom
-    steps:
-      - name: Clone ${{ matrix.app }}
-        uses: actions/checkout@v4
-        with:
-          repository: apifornia/${{ matrix.app }}
-          #ref: pr
-          path: ${{ matrix.app }}_${{ matrix.suffix }}
-          token: ${{ secrets.gh_token }}
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: github
-          password: ${{ secrets.gh_token }}
-      - name: Cleanup ${{ matrix.app }}
-        run: |
-          echo app: ${{ matrix.app }}
-          echo folder: ${{ matrix.app }}
-          echo suffix: ${{ matrix.suffix }}
-          echo =============================================
-          cd ${{ matrix.app }}_${{ matrix.suffix }}/${{ matrix.folder }}
-          pwd
-          
-          echo Get env vars:
-          echo  "${{ secrets.gh_token }}" | gh auth login --with-token
-          gh variable get PR --repo apifornia/${{ matrix.app }} > .env
-          ls -lah
-          
-          echo Setting unique id
-          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' docker-compose.yml
-
-          if [ "${{ matrix.app }}" == "${{ needs.setup.outputs.CALLER_REPO_NAME }}" ]; then
-            if [ "${{ matrix.suffix }}" == "_" ]; then
-              echo Replacing image for app "${{ matrix.app }}" in .env
-              sed -i -e 's~IMAGE_NAME=.*~IMAGE_NAME=${{ needs.setup.outputs.PR_REPO_IMAGE }}~g' .env
-            fi
-            if [ "${{ matrix.suffix }}" != "_" ]; then
-              echo Replacing image for app "${{ matrix.app }}" in docker-compose.yml
-              sed -i -e 's~:latest~:${{ needs.setup.outputs.PR_ID }}~g' docker-compose.yml
-            fi
-          fi
-          
-          echo Cleanup ${{ matrix.app }}
-          docker compose down -v || true
-
-  # =============
-  # FRONTEND stop
-  # =============
-  frontend-down:
-    needs: [setup,infra,frontend-up,apps,tests,wipe-apps]
-    #if: "${{ needs.setup.outputs.CALLER_REPO_NAME != 'flow-editor-vue3' }}"
-    if: ${{ always() }}
-    runs-on: apifornia-builder
-    steps:
-      - name: Clone ${{ matrix.app }}
-        uses: actions/checkout@v4
-        with:
-          repository: apifornia/flow-editor-vue3
-          ref: develop
-          path: flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}
-          token: ${{ secrets.gh_token }}
-      - name: Get env file
-        run: |
-          echo Get env vars:
-          echo  "${{ secrets.gh_token }}" | gh auth login --with-token
-          gh variable get PR --repo apifornia/flow-editor-vue3 > flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env
-          
-          echo Setting unique id and add image name
-          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env
-          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/docker/compose/pr/docker-compose.yml
-          echo "IMAGE_NAME=${{ needs.frontend-up.outputs.IMAGE_ID }}" >> flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env
-      - name: Shut down
-        run: >
-          docker compose --env-file flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env -f flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/docker/compose/pr/docker-compose.yml down || true
-
 
   # =============
   # INFRA cleanup
   # =============
-  wipe-infra:
-    needs: [setup,infra,apps,tests,wipe-apps,frontend-down]
+  cleanup:
+    needs: [setup,infra,apps,tests]
     if: ${{ always() }}
-    runs-on: apifornia-builder
-    strategy:
-      matrix:
-        app:
-          - traefik
-          - kafka
-          - mongo
-          - postgres
-          - redis
+    runs-on: apifornia-dev-k8s
     steps:
-      - name: Clone infra
-        uses: actions/checkout@v4
-        with:
-          repository: apifornia/infrastructure
-          #ref: main
-          path: ${{ matrix.app }}
-          token: ${{ secrets.gh_token }}
-      - name: Cleanup ${{ matrix.app }}
+      - id: cleanup
+        name: Cleanup
         run: |
-          echo app: ${{ matrix.app }}
-          cd ${{ matrix.app }}/docker-compose/pr/${{ matrix.app }}
-          pwd
-          ls -lah
-          
-          echo Setting unique id
-          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' docker-compose.yml
-          
-          echo Cleanup ${{ matrix.app }}
-          docker compose down -v || true
+            kubectl delete ns ${{ needs.setup.outputs.PR_ID }} --force
+            echo "bye bye"
