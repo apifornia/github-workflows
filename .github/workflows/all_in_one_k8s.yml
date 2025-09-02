@@ -80,18 +80,21 @@ jobs:
           tags: |
             type=raw,value=${{ needs.setup.outputs.EXTRA_TAG }}
 
-      # - name: Save Tag
-      #   id: save_tag
-      #   run: |
-      #     echo "TAGS=${{ steps.meta.outputs.tags }}" >> $GITHUB_OUTPUT
-      
-      - name: Build and push
+      - name: Build and push - SHA tag
         uses: docker/build-push-action@v4
         with:
           context: .
           file: ${{ inputs.docker_file }}
           push: ${{ inputs.do_build_push }}
           tags: ${{ steps.meta.outputs.tags }}
+
+      - name: Build and push - ENV tag
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ${{ inputs.docker_file }}
+          push: ${{ inputs.do_build_push }}
+          tags: ${{ steps.meta2.outputs.tags }}
 
   deploy-k8s:
     needs: [setup,build]
