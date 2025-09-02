@@ -54,16 +54,7 @@ jobs:
 
       - name: Generate .env file
         run: echo "${{ secrets.env_vars }}" > ${{ inputs.env_file }}
-      
-      - name: Get Docker metadata
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          images: ghcr.io/${{ github.repository }}
-          tags: |
-            type=raw,value=${{ github.sha }}
-            type=raw,value=${{ needs.setup.outputs.EXTRA_TAG }}
-      
+
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
         with:
@@ -71,13 +62,38 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Build and push
+      - name: Get Docker metadata - SHA tag
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=${{ github.sha }}
+            type=raw,value=${{ needs.setup.outputs.EXTRA_TAG }}
+
+      - name: Get Docker metadata - ENV tag
+        id: meta2
+        uses: docker/metadata-action@v4
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=${{ needs.setup.outputs.EXTRA_TAG }}
+      
+      - name: Build and push - SHA tag
         uses: docker/build-push-action@v4
         with:
           context: .
           file: ${{ inputs.docker_file }}
           push: ${{ inputs.do_build_push }}
           tags: ${{ steps.meta.outputs.tags }}
+
+      - name: Build and push - ENV tag
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ${{ inputs.docker_file }}
+          push: ${{ inputs.do_build_push }}
+          tags: ${{ steps.meta2.outputs.tags }}
 
   deploy:
     needs: [setup,build]
