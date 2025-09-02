@@ -57,20 +57,28 @@ jobs:
       - name: Generate .env file
         run: echo "${{ secrets.build_vars }}" > ${{ inputs.env_file }}
       
-      - name: Get Docker metadata
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          images: ghcr.io/${{ github.repository }}
-          tags: |
-            type=raw,value=${{ github.sha }}
-      
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Get Docker metadata - SHA tag
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=${{ github.sha }}
+
+      - name: Get Docker metadata - ENV tag
+        id: meta2
+        uses: docker/metadata-action@v4
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=${{ needs.setup.outputs.EXTRA_TAG }}
 
       # - name: Save Tag
       #   id: save_tag
