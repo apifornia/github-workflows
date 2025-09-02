@@ -69,7 +69,6 @@ jobs:
           images: ghcr.io/${{ github.repository }}
           tags: |
             type=raw,value=${{ github.sha }}
-            type=raw,value=${{ needs.setup.outputs.EXTRA_TAG }}
 
       - name: Get Docker metadata - ENV tag
         id: meta2
