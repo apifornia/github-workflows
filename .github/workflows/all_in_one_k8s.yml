@@ -98,7 +98,7 @@ jobs:
 
   deploy-k8s:
     needs: [setup,build]
-    runs-on: ${{ needs.setup.outputs.DEPLOY_RUNNER }}-k8s
+    runs-on: apifornia-dev-k8s
     if: "${{ inputs.do_deploy == true }}"
     steps:
       - name: Checkout
