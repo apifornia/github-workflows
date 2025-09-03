@@ -4,9 +4,344 @@ on:
       gh_token:
         required: true
 
-jobs: 
-  mockup:
-    runs-on: apifornia-builder
+jobs:
+  # =====
+  # SETUP
+  # =====
+  setup:
+    runs-on: apifornia-dev-k8s
+    outputs:
+      CALLER_REPO_NAME: ${{ steps.setup.outputs.CALLER_REPO_NAME }}
+      PR_REPO_IMAGE: ${{ steps.setup.outputs.PR_REPO_IMAGE }}
+      PR_NUMBER: ${{ steps.setup.outputs.PR_NUMBER }}
+      PR_ID: ${{ steps.setup.outputs.PR_ID }}
+      TEST_USER: ${{ steps.setup.outputs.TEST_USER }}
+      TEST_PASSWORD: ${{ steps.setup.outputs.TEST_PASSWORD }}
     steps:
-      - name: Mockup
-        run: echo "THIS IS TEMPORARY MOCK"
+      - id: setup
+        name: Configuration setup
+        run: |
+            #env
+            echo ======================================
+            
+            REPOSITORY_NAME=(${GITHUB_REPOSITORY//\// })
+            REF_NAME=(${GITHUB_REF_NAME//\// })
+            TEST_USER=(user_$((1 + $RANDOM % 10000))@testov.net)
+            TEST_PASSWORD=$(tr -dc 'A-Za-z0-9!?%=' < /dev/urandom | head -c 20)!
+            PR_ID=(pr-${REPOSITORY_NAME[1]}-${REF_NAME[0]})
+            PR_REPO_IMAGE=(ghcr.io/${GITHUB_REPOSITORY}:${PR_ID})
+
+            echo Build app with tag: ${PR_REPO_IMAGE}
+            echo Caller repo: ${REPOSITORY_NAME[1]}
+            echo PR number: ${REF_NAME[0]}
+            echo Test user: $TEST_USER
+            echo Password: $TEST_PASSWORD
+            
+            echo "CALLER_REPO_NAME=${REPOSITORY_NAME[1]}" >> $GITHUB_OUTPUT
+            echo "PR_NUMBER=${REF_NAME[0]}" >> $GITHUB_OUTPUT
+            echo "PR_ID=${PR_ID}" >> $GITHUB_OUTPUT
+            echo "PR_REPO_IMAGE=${PR_REPO_IMAGE}" >> $GITHUB_OUTPUT
+            echo "TEST_USER=${TEST_USER}" >> $GITHUB_OUTPUT
+            echo "TEST_PASSWORD=${TEST_PASSWORD}" >> $GITHUB_OUTPUT
+
+            kubectl create ns ${PR_ID}
+            kubectl create secret docker-registry ghcr-io --docker-server="ghcr.io" --docker-username="github" --docker-password="${{ secrets.gh_token }}" -n ${PR_ID}
+  
+  # ================
+  # INFRA deployment
+  # ================
+  infra:
+    needs: [setup]
+    runs-on: apifornia-dev-k8s
+    strategy:
+      matrix:
+        app:
+          - kafka
+          - mongodb
+          - redis
+    steps:
+      - name: Clone infra
+        uses: actions/checkout@v4
+        with:
+          repository: apifornia/infrastructure
+          #ref: main
+          path: .github/${{ matrix.app }}_${{ needs.setup.outputs.PR_ID }}
+          token: ${{ secrets.gh_token }}
+      - name: Update and run ${{ matrix.app }}
+        run: |
+          echo app: ${{ matrix.app }}_${{ needs.setup.outputs.PR_ID }}
+          cd .github/${{ matrix.app }}_${{ needs.setup.outputs.PR_ID }}/charts/${{ matrix.app }}
+
+          helm dependency build
+          
+          helm install "${{ matrix.app }}" ./ \
+          -f ./values-pr.yaml \
+          --namespace "${{ needs.setup.outputs.PR_ID }}"
+
+  # =========================
+  # FRONTEND build and deploy
+  # =========================
+  frontend-up:
+    needs: [setup,infra]
+    runs-on: apifornia-dev-k8s
+    #if: "${{ needs.setup.outputs.CALLER_REPO_NAME != 'flow-editor-vue3' }}"
+    outputs:
+      IMAGE_ID: ${{ steps.front-build.outputs.imageid }}
+    steps:
+      - id: setup
+        name: Setup
+        run: >
+          if [ ${{ needs.setup.outputs.CALLER_REPO_NAME }} == 'flow-editor-vue3' ]; then
+            echo "BRANCH=${GITHUB_HEAD_REF}"
+            echo "BRANCH=${GITHUB_HEAD_REF}" >> $GITHUB_OUTPUT
+          else
+            echo "BRANCH=develop"
+            echo "BRANCH=develop" >> $GITHUB_OUTPUT
+          fi
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.gh_token }}
+      - name: Get Docker metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ghcr.io/apifornia/flow-editor-vue3
+          tags: |
+            type=raw,value=${{ needs.setup.outputs.PR_ID }}
+      - name: Clone apifornia/flow-editor-vue3
+        uses: actions/checkout@v4
+        with:
+          repository: apifornia/flow-editor-vue3
+          ref: ${{ steps.setup.outputs.BRANCH }}
+          #ref: pr
+          path: .github/flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}
+          token: ${{ secrets.gh_token }}
+      - name: Get env file
+        run: |
+          echo Get env vars:
+          echo  "${{ secrets.gh_token }}" | gh auth login --with-token
+          gh variable get PR --repo apifornia/flow-editor-vue3 > .github/flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env
+          
+          # echo Setting unique id
+          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' .github/flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env
+          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' .github/flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/deploy/chart/values-pr.yml
+      - id: front-build-push
+        name: Build
+        uses: docker/build-push-action@v4
+        with:
+          context: .github/flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}
+          file: .github/flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/deploy/docker/images/dev/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          #secret-files: flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env
+      - name: Update and run ${{ matrix.app }}
+        run: |
+          cd .github/flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}
+          helm install "flow-editor-vue3" ./deploy/chart \
+          -f ./deploy/chart/values-pr.yml \
+          --namespace "${{ needs.setup.outputs.PR_ID }}" \
+          --set image="${{ steps.meta.outputs.tags }}"
+
+  # ===============
+  # APPS deployment
+  # ===============
+  apps:
+    needs: [setup,infra,frontend-up]
+    runs-on: apifornia-dev-k8s
+    strategy:
+      max-parallel: 1
+      matrix:
+        include:
+          - app: flow-core
+          - app: worker-rust
+          - app: wand
+    steps:
+      - name: Clone ${{ matrix.app }}
+        uses: actions/checkout@v4
+        with:
+          repository: apifornia/${{ matrix.app }}
+          #ref: pr
+          path: .github/${{ matrix.app }}_${{ needs.setup.outputs.PR_ID }}
+          token: ${{ secrets.gh_token }}
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: github
+          password: ${{ secrets.gh_token }}
+      - name: Update and run ${{ matrix.app }}
+        run: |
+          echo app: ${{ matrix.app }}
+          cd .github/${{ matrix.app }}_${{ needs.setup.outputs.PR_ID }}
+          pwd
+          echo =============================================
+          
+          echo Get env vars:
+          echo  "${{ secrets.gh_token }}" | gh auth login --with-token
+          gh variable get PR_K8S --repo apifornia/${{ matrix.app }} > ./deploy/chart/secrets
+          echo "SEED_USERS: '${{ needs.setup.outputs.TEST_USER }}:${{ needs.setup.outputs.TEST_PASSWORD }}'" >> ./deploy/chart/secrets
+
+          echo Setting unique id
+          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' ./deploy/chart/secrets
+          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' ./deploy/chart/values-pr.yml
+
+          if [ "${{ matrix.app }}" == "${{ needs.setup.outputs.CALLER_REPO_NAME }}" ]; then
+              helm install "${{ matrix.app }}" ./deploy/chart \
+                -f ./deploy/chart/values-pr.yml \
+                --namespace "${{ needs.setup.outputs.PR_ID }}" \
+                --set image="${{ needs.setup.outputs.PR_REPO_IMAGE }}"
+            else
+              helm install "${{ matrix.app }}" ./deploy/chart \
+                -f ./deploy/chart/values-pr.yml \
+                --namespace "${{ needs.setup.outputs.PR_ID }}" \
+                --set image="ghcr.io/apifornia/${{ matrix.app }}:dev"
+          fi
+
+  # ======
+  # TESTS
+  # ======
+  tests:
+    needs: [setup,infra,frontend-up,apps]
+    runs-on: apifornia-dev-k8s
+    steps:
+      # - name: Clone Waiter
+      #   uses: actions/checkout@v4
+      #   with:
+      #     repository: apifornia/infrastructure
+      #     #ref: main
+      #     path: waiter
+      #     token: ${{ secrets.gh_token }}
+      # - name: Configure and run Waiter
+      #   run: |
+      #     mkdir STOPS || true
+      #     chmod 777 STOPS || true
+      #     FULL_LOCAL_PATH2=$(pwd | sed "s~/tmp/runner~${LOCAL_FOLDER}~")
+          
+      #     cd waiter/docker-compose/pr/waiter
+      #     pwd
+
+      #     echo Create .env file
+      #     echo "STOP_FILENAME=stop__${{ needs.setup.outputs.PR_ID }}" > .env
+      #     echo "TELEGRAM_BOT=${{ vars.TELEGRAM_BOT }}" >> .env
+      #     echo "TELEGRAM_CHANNEL=${{ vars.TELEGRAM_CHANNEL }}" >> .env
+                    
+      #     echo Setting unique id
+      #     sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' docker-compose.yml
+
+      #     FULL_LOCAL_PATH=$(pwd | sed "s~/tmp/runner~${LOCAL_FOLDER}~")
+      #     sed -i "s~<local-folder>~$FULL_LOCAL_PATH~" docker-compose.yml || true
+      #     sed -i "s~<local-folder2>~$FULL_LOCAL_PATH2~" docker-compose.yml || true
+          
+      #     echo Removing old containers
+      #     docker compose down -v || true
+          
+      #     echo Starting service
+      #     docker compose up -d
+      # - name: Create user
+      #   run: |
+      #     sleep 10m
+      #     #kostyl
+      #     docker restart ${{ needs.setup.outputs.PR_ID }}-flow-core
+          
+      #     while :
+      #     do
+      #       if [[ $(docker run -v --rm --network private curlimages/curl:latest curl -LI http://${{ needs.setup.outputs.PR_ID }}-flow-core:3002 -o /dev/null -w '%{http_code}\n' -s) == "404" ]]; then
+      #         echo "Seems ready..."
+      #         # 1st user
+      #         docker run --rm --network private curlimages/curl:latest \
+      #           curl -v -X POST 'http://${{ needs.setup.outputs.PR_ID }}-flow-core:3002/auth/register' -H 'Content-Type: application/json' -d '{"email": "${{ needs.setup.outputs.TEST_USER }}","password": "${{ needs.setup.outputs.TEST_PASSWORD }}"}'
+      #         # retry just in case
+      #         docker run --rm --network private curlimages/curl:latest \
+      #           curl -v -X POST 'http://${{ needs.setup.outputs.PR_ID }}-flow-core:3002/auth/register' -H 'Content-Type: application/json' -d '{"email": "${{ needs.setup.outputs.TEST_USER }}","password": "${{ needs.setup.outputs.TEST_PASSWORD }}"}'
+      #         exit 0
+      #       fi
+      #       echo "Waiting for service to come up..."
+      #       sleep 10s
+      #     done
+      # - name: Wait
+      #   run: |
+      #     docker run -v --rm --network private curlimages/curl:latest curl -LI http://${{ needs.setup.outputs.PR_ID }}-waiter:8080?action=telegram -o /dev/null -s
+      #     pwd
+      #     total_time=3600
+      #     elapsed=0
+      #     while [ $elapsed -lt $total_time ]; do
+      #       if [[ -e ./STOPS/stop__${{ needs.setup.outputs.PR_ID }} ]]; then
+      #         echo "Exiting"
+      #         rm ./STOPS/stop__${{ needs.setup.outputs.PR_ID }}
+      #         exit 0
+      #       fi
+      #       echo "Waiting for - stop__${{ needs.setup.outputs.PR_ID }}"
+      #       sleep 30s
+      #       elapsed=$((elapsed + 30))
+      #     done
+      - name: Clone watcher
+        uses: actions/checkout@v4
+        with:
+          repository: apifornia/watcher2
+          #ref: main
+          path: .github/${{ needs.setup.outputs.PR_ID }}_watcher2
+          token: ${{ secrets.gh_token }}
+      - id: config
+        name: Get/Generate config
+        run: |
+          echo Get env vars:
+          echo  "${{ secrets.gh_token }}" | gh auth login --with-token
+          gh variable get PR --repo apifornia/watcher2 > .github/${{ needs.setup.outputs.PR_ID }}_watcher2/.${{ needs.setup.outputs.PR_ID }}.env
+          
+          echo Setting unique id
+          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' .github/${{ needs.setup.outputs.PR_ID }}_watcher2/.${{ needs.setup.outputs.PR_ID }}.env
+          
+          echo Adding login creds
+          echo "USER_PRIMARY=${{ needs.setup.outputs.TEST_USER }} ${{ needs.setup.outputs.TEST_PASSWORD }}" >> .github/${{ needs.setup.outputs.PR_ID }}_watcher2/.${{ needs.setup.outputs.PR_ID }}.env
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 22
+      - id: tests
+        name: E2E tests
+        uses: apifornia/github-actions/playwright-action@main
+        with:
+          runs_on: apifornia-dev-k8s
+          change_dir: .github/${{ needs.setup.outputs.PR_ID }}_watcher2
+          env_file: .${{ needs.setup.outputs.PR_ID }}.env
+          folder: flow-core/flow-core/.github/${{ needs.setup.outputs.PR_ID }}_watcher2
+      # - name: Wait
+      #   if: ${{ failure() }}
+      #   run: |
+      #     docker run -v --rm --network private curlimages/curl:latest curl -LI http://${{ needs.setup.outputs.PR_ID }}-waiter:8080?action=telegram -o /dev/null -s
+      #     pwd
+      #     total_time=3600
+      #     elapsed=0
+      #     while [ $elapsed -lt $total_time ]; do
+      #       if [[ -e ./STOPS/stop__${{ needs.setup.outputs.PR_ID }} ]]; then
+      #         echo "Exiting"
+      #         rm ./STOPS/stop__${{ needs.setup.outputs.PR_ID }}
+      #         exit 0
+      #       fi
+      #       echo "Waiting for - stop__${{ needs.setup.outputs.PR_ID }}"
+      #       sleep 30s
+      #       elapsed=$((elapsed + 30))
+      #     done
+      # - name: Stop Waiter
+      #   if: ${{ always() }}
+      #   run: |
+      #     cd waiter/docker-compose/pr/waiter
+         
+      #     echo Removing old containers
+      #     docker compose down -v || true
+
+  # =============
+  # INFRA cleanup
+  # =============
+  cleanup:
+    needs: [setup,infra,apps,tests]
+    if: ${{ always() }}
+    runs-on: apifornia-dev-k8s
+    steps:
+      - id: cleanup
+        name: Cleanup
+        run: |
+            kubectl delete ns ${{ needs.setup.outputs.PR_ID }} --force
+            echo "bye bye"
