@@ -1,0 +1,26 @@
+on:
+  workflow_call:
+    inputs:
+      runs_on:
+        type: string
+        default: "apifornia-builder"
+        required: true
+      path:
+        type: string
+        required: true
+    secrets:
+      host:
+        required: true
+      username:
+        required: true
+      password:
+        required: true
+
+jobs:
+  test:
+    runs-on: ${{ inputs.runs_on }}
+    steps:
+      - id: copy
+        name: Copy
+        run: |
+          # script
