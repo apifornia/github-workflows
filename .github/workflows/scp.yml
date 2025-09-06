@@ -5,7 +5,10 @@ on:
         type: string
         default: "apifornia-builder"
         required: true
-      path:
+      local_path:
+        type: string
+        required: true
+      remote_path:
         type: string
         required: true
     secrets:
@@ -24,3 +27,4 @@ jobs:
         name: Copy
         run: |
           # script
+          sshpass -p "${{ secrets.password }}" scp -r ${{ secrets.username }}@${{ secrets.host }}:${{ inputs.remote_path }} ${{ inputs.local_path }}
