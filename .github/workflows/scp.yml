@@ -29,4 +29,4 @@ jobs:
           # script
           sshpass -p "${{ secrets.password }}" ssh -p 23 -o StrictHostKeyChecking=no ${{ secrets.username }}@${{ secrets.host }} "mkdir -p ${{ inputs.remote_path }}"
           #sshpass -p "${{ secrets.password }}" scp -o StrictHostKeyChecking=no -r ${{ secrets.username }}@${{ secrets.host }}:${{ inputs.remote_path }} ${{ inputs.local_path }}
-          sshpass -p "${{ secrets.password }}" rsync --progress -e 'ssh -p23 -o StrictHostKeyChecking=no' --recursive ${{ inputs.local_path }}/*  ${{ secrets.username }}@${{ secrets.host }}:${{ inputs.remote_path }}
+          sshpass -p "${{ secrets.password }}" rsync --progress -e 'ssh -p23 -o StrictHostKeyChecking=no' --recursive ${{ inputs.local_path }}  ${{ secrets.username }}@${{ secrets.host }}:${{ inputs.remote_path }}
