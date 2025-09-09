@@ -118,7 +118,9 @@ jobs:
             kubectl create secret docker-registry ghcr-io --docker-server="ghcr.io" --docker-username="github" --docker-password="${{ secrets.gh_token }}" -n ${{ needs.setup.outputs.CALLER_REPO_NAME }}
             echo "Namespace and pullsecret created"
           else
-            exit 0
+            kubectl delete secret docker-registry -n ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+            kubectl create secret docker-registry ghcr-io --docker-server="ghcr.io" --docker-username="github" --docker-password="${{ secrets.gh_token }}" -n ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+            echo "Secret re-created"
           fi
 
       - name: Generate .env file
