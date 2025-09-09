@@ -109,8 +109,8 @@ jobs:
       - name: Namespace check
         run: |
           set +e
-          NS_EXISTS=$(kubectl get ns ${{ needs.setup.outputs.CALLER_REPO_NAME }})
-          if [ "$NS_EXISTS" != "0" ]; then
+          NS_EXISTS=$(kubectl get ns ${{ needs.setup.outputs.CALLER_REPO_NAME }}) || true
+          if [ "$NS_EXISTS" == "" ]; then
             chmod +x /actions-runner/kubectl
             kubectl create ns ${{ needs.setup.outputs.CALLER_REPO_NAME }}
             #echo  "${{ secrets.gh_token }}" | gh auth login --with-token
