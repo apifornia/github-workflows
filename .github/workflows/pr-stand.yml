@@ -183,7 +183,7 @@ jobs:
           echo Get env vars:
           echo  "${{ secrets.gh_token }}" | gh auth login --with-token
           gh variable get PR_K8S --repo apifornia/${{ matrix.app }} > ./deploy/chart/secrets
-          echo "SEED_USERS: '${{ needs.setup.outputs.TEST_USER }}:${{ needs.setup.outputs.TEST_PASSWORD }}'" >> ./deploy/chart/secrets
+          echo "SEED_USERS: '${{ needs.setup.outputs.TEST_USER }}:${{ needs.setup.outputs.TEST_PASSWORD }}:test'" >> ./deploy/chart/secrets
 
           echo Setting unique id
           sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' ./deploy/chart/secrets
