@@ -44,6 +44,7 @@ jobs:
             echo "TEST_USER=${TEST_USER}" >> $GITHUB_OUTPUT
             echo "TEST_PASSWORD=${TEST_PASSWORD}" >> $GITHUB_OUTPUT
 
+            kubectl delete ns ${PR_ID} --force || true
             kubectl create ns ${PR_ID}
             kubectl create secret docker-registry ghcr-io --docker-server="ghcr.io" --docker-username="github" --docker-password="${{ secrets.gh_token }}" -n ${PR_ID}
   
