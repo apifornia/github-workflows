@@ -72,8 +72,8 @@ jobs:
         run: |
           echo app: ${{ matrix.app }}_${{ needs.setup.outputs.PR_ID }}
           cd .github/${{ matrix.app }}_${{ needs.setup.outputs.PR_ID }}/charts/${{ matrix.app }}
-
-          helm dependency build
+          
+          #helm dependency build
           
           helm install "${{ matrix.app }}" ./ \
           -f ./values-pr.yaml \
