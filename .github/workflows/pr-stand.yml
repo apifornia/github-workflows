@@ -317,8 +317,8 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: my-artifact
-          path: my-artifact.txt
+          name: playwright-traces
+          path: /tmp/runner/work/playwright_save
 
       - name: Comment on PR with artifact link
         if: failure()
@@ -327,9 +327,7 @@ jobs:
           script: |
             const artifactUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
             const commentBody = `
-              A new artifact has been generated for this pull request.
-
-              You can download it from the [artifacts section of this workflow run](${artifactUrl}).
+              You can download [playwright traces of last failed run](${artifactUrl}).
             `;
 
             github.rest.issues.createComment({
