@@ -310,15 +310,18 @@ jobs:
           folder: ${{ needs.setup.outputs.CALLER_REPO_NAME }}/${{ needs.setup.outputs.CALLER_REPO_NAME }}/.github/${{ needs.setup.outputs.PR_ID }}_watcher2
             
       - name: Create a sample file
+        if: failure()
         run: echo "This is a test artifact." > my-artifact.txt
 
       - name: Upload artifact
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: my-artifact
           path: my-artifact.txt
 
       - name: Comment on PR with artifact link
+        if: failure()
         uses: actions/github-script@v7
         with:
           script: |
