@@ -372,5 +372,6 @@ jobs:
       - id: cleanup
         name: Cleanup
         run: |
+            sleep 30m
             kubectl delete ns ${{ needs.setup.outputs.PR_ID }} --force
             echo "bye bye"
