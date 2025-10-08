@@ -278,6 +278,21 @@ jobs:
       #       sleep 30s
       #       elapsed=$((elapsed + 30))
       #     done
+      - name: Wait for Flow-Core to start
+        run: |
+          sleep 10m
+          #kostyl
+          docker restart ${{ needs.setup.outputs.PR_ID }}-flow-core
+          
+          while:
+          do
+            if [[ $(docker run -v --rm --network private curlimages/curl:latest curl -LI http://${{ needs.setup.outputs.PR_ID }}-flow-core:3002 -o /dev/null -w '%{http_code}\n' -s) == "404" ]]; then
+              echo "Seems ready..."
+              exit 0
+            fi
+            echo "Waiting for service to come up..."
+            sleep 10s
+          done
       - name: Clone watcher
         uses: actions/checkout@v4
         with:
