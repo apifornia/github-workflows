@@ -281,7 +281,7 @@ jobs:
       - name: Wait for Flow-Core to start
         run: |
           #sleep 10m
-          while:
+          while :
           do
             if [[ $(docker run -v --rm curlimages/curl:latest curl -LI https://${{ needs.setup.outputs.PR_ID }}-flow-core.pr.apifornia.com -o /dev/null -w '%{http_code}\n' -s) == "404" ]]; then
               echo "Seems ready..."
