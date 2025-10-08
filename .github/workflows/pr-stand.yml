@@ -376,11 +376,36 @@ jobs:
       #     echo Removing old containers
       #     docker compose down -v || true
 
+  # ========
+  # App Logs
+  # ========
+  app-logs:
+    needs: [setup,infra,apps,tests]
+    if: ${{ failure() }}
+    runs-on: apifornia-dev-k8s
+    strategy:
+      max-parallel: 1
+      matrix:
+        include:
+          - app: flow-core
+          - app: worker-rust
+          - app: wand
+    steps:
+      - name: Logs ${{ matrix.app }}
+        run: |
+          kubectl logs -l app=${{ matrix.app }} -n ${{ needs.setup.outputs.PR_ID }} > ${{ matrix.app }}.log
+          echo "bye bye"
+      - name: Upload Logs ${{ matrix.app }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.app }}.log
+          path: ${{ matrix.app }}.log
+
   # =============
   # INFRA cleanup
   # =============
   cleanup:
-    needs: [setup,infra,apps,tests]
+    needs: [setup,infra,apps,tests,app-logs]
     if: ${{ always() }}
     runs-on: apifornia-dev-k8s
     steps:
