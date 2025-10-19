@@ -98,7 +98,7 @@ jobs:
 
   deploy-k8s:
     needs: [setup,build]
-    runs-on: apifornia-dev-k8s
+    runs-on: apifornia-builder
     if: "${{ inputs.do_deploy == true }}"
     steps:
       - name: Checkout
@@ -108,18 +108,17 @@ jobs:
 
       - name: Namespace check
         run: |
+          export 
           set +e
           NS_EXISTS=$(kubectl get ns ${{ needs.setup.outputs.CALLER_REPO_NAME }}) || true
           if [ "$NS_EXISTS" == "" ]; then
             chmod +x /actions-runner/kubectl
-            kubectl create ns ${{ needs.setup.outputs.CALLER_REPO_NAME }}
-            #echo  "${{ secrets.gh_token }}" | gh auth login --with-token
-            #DOCKER_PASSWORD=$(gh variable get REGISTRY_TOKEN)
-            kubectl create secret docker-registry ghcr-io --docker-server="ghcr.io" --docker-username="github" --docker-password="${{ secrets.gh_token }}" -n ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+            kubectl create ns ${{ needs.setup.outputs.CALLER_REPO_NAME }} --context apifornia-${{ needs.setup.outputs.EXTRA_TAG }}
+            kubectl create secret docker-registry ghcr-io --docker-server="ghcr.io" --docker-username="github" --docker-password="${{ secrets.gh_token }}" -n ${{ needs.setup.outputs.CALLER_REPO_NAME }} --context apifornia-${{ needs.setup.outputs.EXTRA_TAG }}
             echo "Namespace and pullsecret created"
           else
-            kubectl delete secret ghcr-io -n ${{ needs.setup.outputs.CALLER_REPO_NAME }}
-            kubectl create secret docker-registry ghcr-io --docker-server="ghcr.io" --docker-username="github" --docker-password="${{ secrets.gh_token }}" -n ${{ needs.setup.outputs.CALLER_REPO_NAME }}
+            kubectl delete secret ghcr-io -n ${{ needs.setup.outputs.CALLER_REPO_NAME }} --context apifornia-${{ needs.setup.outputs.EXTRA_TAG }}
+            kubectl create secret docker-registry ghcr-io --docker-server="ghcr.io" --docker-username="github" --docker-password="${{ secrets.gh_token }}" -n ${{ needs.setup.outputs.CALLER_REPO_NAME }} --context apifornia-${{ needs.setup.outputs.EXTRA_TAG }}
             echo "Secret re-created"
           fi
 
@@ -131,11 +130,12 @@ jobs:
       - name: Helm install
         env:
           IMAGE_NAME: ${{ steps.meta.outputs.tags }}
-        run: >
-          helm upgrade "${{ needs.setup.outputs.CALLER_REPO_NAME }}" ./deploy/chart
-          -f ./deploy/chart/values-${{ needs.setup.outputs.EXTRA_TAG }}.yml
-          --install
-          --atomic
-          --namespace "${{ needs.setup.outputs.CALLER_REPO_NAME }}"
-          --set image="${{ needs.build.outputs.TAGS }}"
+        run: |
+          export HELM_KUBECONTEXT=apifornia-${{ needs.setup.outputs.EXTRA_TAG }}
+          helm upgrade "${{ needs.setup.outputs.CALLER_REPO_NAME }}" ./deploy/chart \
+          -f ./deploy/chart/values-${{ needs.setup.outputs.EXTRA_TAG }}.yml \
+          --install \
+          --atomic \
+          --namespace "${{ needs.setup.outputs.CALLER_REPO_NAME }}" \
+          --set image="${{ needs.build.outputs.TAGS }}" \
           --set git_commit="${GITHUB_SHA}"
