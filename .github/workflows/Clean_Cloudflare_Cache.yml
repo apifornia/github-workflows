@@ -12,7 +12,7 @@ on:
 
 jobs:
   clean-cache:
-    runs-on: ci-server
+    runs-on: apifornia-builder
     steps:
       - name: Clean CF Cache
         run: |
