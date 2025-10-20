@@ -7,7 +7,7 @@ on:
         required: false
       node_version:
         type: string
-        default: '18'
+        default: '22'
         required: false
 
 jobs:
