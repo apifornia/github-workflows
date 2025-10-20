@@ -9,7 +9,7 @@ jobs:
   # SETUP
   # =====
   setup:
-    runs-on: apifornia-dev-k8s
+    runs-on: apifornia-builder
     outputs:
       CALLER_REPO_NAME: ${{ steps.setup.outputs.CALLER_REPO_NAME }}
       PR_REPO_IMAGE: ${{ steps.setup.outputs.PR_REPO_IMAGE }}
@@ -44,16 +44,16 @@ jobs:
             echo "TEST_USER=${TEST_USER}" >> $GITHUB_OUTPUT
             echo "TEST_PASSWORD=${TEST_PASSWORD}" >> $GITHUB_OUTPUT
 
-            kubectl delete ns ${PR_ID} --force || true
-            kubectl create ns ${PR_ID}
-            kubectl create secret docker-registry ghcr-io --docker-server="ghcr.io" --docker-username="github" --docker-password="${{ secrets.gh_token }}" -n ${PR_ID}
+            kubectl delete ns ${PR_ID} --force --context apifornia-dev || true
+            kubectl create ns ${PR_ID} --context apifornia-dev
+            kubectl create secret docker-registry ghcr-io --docker-server="ghcr.io" --docker-username="github" --docker-password="${{ secrets.gh_token }}" -n ${PR_ID} --context apifornia-dev
   
   # ================
   # INFRA deployment
   # ================
   infra:
     needs: [setup]
-    runs-on: apifornia-dev-k8s
+    runs-on: apifornia-builder
     strategy:
       matrix:
         app:
@@ -75,6 +75,7 @@ jobs:
           
           #helm dependency build
           
+          export HELM_KUBECONTEXT=apifornia-dev
           helm install "${{ matrix.app }}" ./ \
           -f ./values-pr.yaml \
           --namespace "${{ needs.setup.outputs.PR_ID }}"
@@ -84,7 +85,7 @@ jobs:
   # =========================
   frontend-up:
     needs: [setup,infra]
-    runs-on: apifornia-dev-k8s
+    runs-on: apifornia-builder
     #if: "${{ needs.setup.outputs.CALLER_REPO_NAME != 'flow-editor-vue3' }}"
     outputs:
       IMAGE_ID: ${{ steps.front-build.outputs.imageid }}
@@ -140,6 +141,7 @@ jobs:
           #secret-files: flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env
       - name: Update and run ${{ matrix.app }}
         run: |
+          export HELM_KUBECONTEXT=apifornia-dev
           cd .github/flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}
           helm install "flow-editor-vue3" ./deploy/chart \
           -f ./deploy/chart/values-pr.yml \
@@ -151,7 +153,7 @@ jobs:
   # ===============
   apps:
     needs: [setup,infra,frontend-up]
-    runs-on: apifornia-dev-k8s
+    runs-on: apifornia-builder
     strategy:
       max-parallel: 1
       matrix:
@@ -189,6 +191,7 @@ jobs:
           sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' ./deploy/chart/secrets
           sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' ./deploy/chart/values-pr.yml
 
+          export HELM_KUBECONTEXT=apifornia-dev
           if [ "${{ matrix.app }}" == "${{ needs.setup.outputs.CALLER_REPO_NAME }}" ]; then
               helm install "${{ matrix.app }}" ./deploy/chart \
                 -f ./deploy/chart/values-pr.yml \
@@ -316,7 +319,7 @@ jobs:
         name: E2E tests
         uses: apifornia/github-actions/playwright-action@main
         with:
-          runs_on: apifornia-dev-k8s
+          runs_on: apifornia-builder
           change_dir: .github/${{ needs.setup.outputs.PR_ID }}_watcher2
           env_file: .${{ needs.setup.outputs.PR_ID }}.env
           folder: ${{ needs.setup.outputs.CALLER_REPO_NAME }}/${{ needs.setup.outputs.CALLER_REPO_NAME }}/.github/${{ needs.setup.outputs.PR_ID }}_watcher2
@@ -379,7 +382,7 @@ jobs:
   app-logs:
     needs: [setup,infra,apps,tests]
     if: ${{ failure() }}
-    runs-on: apifornia-dev-k8s
+    runs-on: apifornia-builder
     strategy:
       max-parallel: 1
       matrix:
@@ -390,7 +393,7 @@ jobs:
     steps:
       - name: Logs ${{ matrix.app }}
         run: |
-          kubectl logs -l app=${{ matrix.app }} -n ${{ needs.setup.outputs.PR_ID }} > ${{ matrix.app }}.log
+          kubectl logs -l app=${{ matrix.app }} -n ${{ needs.setup.outputs.PR_ID }} --context apifornia-dev > ${{ matrix.app }}.log 
           echo "bye bye"
       - name: Upload Logs ${{ matrix.app }}
         uses: actions/upload-artifact@v4
@@ -404,10 +407,10 @@ jobs:
   cleanup:
     needs: [setup,infra,apps,tests,app-logs]
     if: ${{ always() }}
-    runs-on: apifornia-dev-k8s
+    runs-on: apifornia-builder
     steps:
       - id: cleanup
         name: Cleanup
         run: |
-          kubectl delete ns ${{ needs.setup.outputs.PR_ID }} --force
+          kubectl delete ns ${{ needs.setup.outputs.PR_ID }} --force --context apifornia-dev
           echo "bye bye"
