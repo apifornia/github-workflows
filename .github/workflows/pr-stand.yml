@@ -391,9 +391,6 @@ jobs:
           - app: worker-rust
           - app: wand
     steps:
-      - name: speep 10m
-        run: |
-          speep 10m
       - name: Logs ${{ matrix.app }}
         run: |
           kubectl logs -l app=${{ matrix.app }} -n ${{ needs.setup.outputs.PR_ID }} --context apifornia-dev > ${{ matrix.app }}.log 
@@ -412,6 +409,9 @@ jobs:
     if: ${{ always() }}
     runs-on: apifornia-builder
     steps:
+      - name: speep 10m
+        run: |
+          sleep 10m
       - id: cleanup
         name: Cleanup
         run: |
