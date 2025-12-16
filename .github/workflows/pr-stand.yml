@@ -323,9 +323,7 @@ jobs:
           change_dir: .github/${{ needs.setup.outputs.PR_ID }}_watcher2
           env_file: .${{ needs.setup.outputs.PR_ID }}.env
           folder: ${{ needs.setup.outputs.CALLER_REPO_NAME }}/${{ needs.setup.outputs.CALLER_REPO_NAME }}/.github/${{ needs.setup.outputs.PR_ID }}_watcher2
-      # - name: speep 10m
-      #   run: |
-      #     speep 10m
+
       - name: Create a sample file
         if: failure()
         run: echo "This is a test artifact." > my-artifact.txt
@@ -393,6 +391,9 @@ jobs:
           - app: worker-rust
           - app: wand
     steps:
+      - name: speep 10m
+        run: |
+          speep 10m
       - name: Logs ${{ matrix.app }}
         run: |
           kubectl logs -l app=${{ matrix.app }} -n ${{ needs.setup.outputs.PR_ID }} --context apifornia-dev > ${{ matrix.app }}.log 
