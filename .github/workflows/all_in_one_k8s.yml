@@ -5,6 +5,10 @@ on:
         type: string
         default: 'deploy/docker/images/dev/Dockerfile'
         required: false
+      helm_path:
+        type: string
+        default: './deploy/chart'
+        required: false
       env_file:
         type: string
         default: '.env'
@@ -132,8 +136,8 @@ jobs:
           IMAGE_NAME: ${{ steps.meta.outputs.tags }}
         run: |
           export HELM_KUBECONTEXT=apifornia-${{ needs.setup.outputs.EXTRA_TAG }}
-          helm upgrade "${{ needs.setup.outputs.CALLER_REPO_NAME }}" ./deploy/chart \
-          -f ./deploy/chart/values-${{ needs.setup.outputs.EXTRA_TAG }}.yml \
+          helm upgrade "${{ needs.setup.outputs.CALLER_REPO_NAME }}" ${{ inputs.helm_path }} \
+          -f ${{ inputs.helm_path }}/values-${{ needs.setup.outputs.EXTRA_TAG }}.yml \
           --install \
           --atomic \
           --namespace "${{ needs.setup.outputs.CALLER_REPO_NAME }}" \
