@@ -112,7 +112,6 @@ jobs:
 
       - name: Namespace check
         run: |
-          export 
           set +e
           NS_EXISTS=$(kubectl get ns ${{ needs.setup.outputs.CALLER_REPO_NAME }}) || true
           if [ "$NS_EXISTS" == "" ]; then
