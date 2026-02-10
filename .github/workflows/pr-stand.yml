@@ -322,11 +322,8 @@ jobs:
           runs_on: apifornia-builder
           change_dir: .github/${{ needs.setup.outputs.PR_ID }}_watcher2
           env_file: .${{ needs.setup.outputs.PR_ID }}.env
+          ignore_https: "true"
           folder: ${{ needs.setup.outputs.CALLER_REPO_NAME }}/${{ needs.setup.outputs.CALLER_REPO_NAME }}/.github/${{ needs.setup.outputs.PR_ID }}_watcher2
-
-      - name: Create a sample file
-        if: failure()
-        run: echo "This is a test artifact." > my-artifact.txt
 
       - name: Upload artifact
         if: failure()
