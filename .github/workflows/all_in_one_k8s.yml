@@ -148,3 +148,4 @@ jobs:
       - name: Cleanup
         run: |
           docker image rm -f ${{ needs.build.outputs.TAGS }} || true
+          docker image rm -f ${{ needs.setup.outputs.EXTRA_TAG }} || true
