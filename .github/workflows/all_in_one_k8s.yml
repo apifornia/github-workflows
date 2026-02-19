@@ -131,8 +131,6 @@ jobs:
           echo "APP_BUILD_DATE: \"$(date '+%Y%m%d%H%M')\"" >> deploy/chart/secrets
 
       - name: Helm install
-        env:
-          IMAGE_NAME: ${{ steps.meta.outputs.tags }}
         run: |
           export HELM_KUBECONTEXT=apifornia-${{ needs.setup.outputs.EXTRA_TAG }}
           helm upgrade "${{ needs.setup.outputs.CALLER_REPO_NAME }}" ${{ inputs.helm_path }} \
@@ -142,3 +140,11 @@ jobs:
           --namespace "${{ needs.setup.outputs.CALLER_REPO_NAME }}" \
           --set image="${{ needs.build.outputs.TAGS }}" \
           --set git_commit="${GITHUB_SHA}"
+
+  cleanup:
+    runs-on: apifornia-builder
+    needs: [setup,build,deploy-k8s]
+    steps:
+      - name: Cleanup
+        run: |
+          docker image rm -f ${{ needs.build.outputs.TAGS }} || true
