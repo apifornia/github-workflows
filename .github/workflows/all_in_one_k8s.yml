@@ -91,6 +91,8 @@ jobs:
           file: ${{ inputs.docker_file }}
           push: ${{ inputs.do_build_push }}
           tags: ${{ steps.meta.outputs.tags }}
+          labels: |
+            project=apifornia
 
       - name: Build and push - ENV tag
         uses: docker/build-push-action@v4
@@ -99,7 +101,8 @@ jobs:
           file: ${{ inputs.docker_file }}
           push: ${{ inputs.do_build_push }}
           tags: ${{ steps.meta2.outputs.tags }}
-
+          labels: |
+            project=apifornia
   deploy-k8s:
     needs: [setup,build]
     runs-on: apifornia-builder
