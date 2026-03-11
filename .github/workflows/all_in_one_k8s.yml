@@ -1,6 +1,14 @@
 on:
   workflow_call:
     inputs:
+      app_name:
+        type: string
+        default: ''
+        required: false
+      namespace:
+        type: string
+        default: ''
+        required: false
       docker_file:
         type: string
         default: 'deploy/docker/images/dev/Dockerfile'
