@@ -132,12 +132,12 @@ jobs:
           NS_EXISTS=$(kubectl get ns ${{ needs.setup.outputs.CALLER_REPO_NAME }}) || true
           if [ "$NS_EXISTS" == "" ]; then
             chmod +x /actions-runner/kubectl
-            kubectl create ns ${{ needs.setup.outputs.CALLER_REPO_NAME }} --context apifornia-${{ needs.setup.outputs.EXTRA_TAG }}
-            kubectl create secret docker-registry ghcr-io --docker-server="ghcr.io" --docker-username="github" --docker-password="${{ secrets.gh_token }}" -n ${{ needs.setup.outputs.CALLER_REPO_NAME }} --context apifornia-${{ needs.setup.outputs.EXTRA_TAG }}
+            kubectl create ns ${{ needs.setup.outputs.NAMESPACE }} --context apifornia-${{ needs.setup.outputs.EXTRA_TAG }}
+            kubectl create secret docker-registry ghcr-io --docker-server="ghcr.io" --docker-username="github" --docker-password="${{ secrets.gh_token }}" -n ${{ needs.setup.outputs.NAMESPACE }} --context apifornia-${{ needs.setup.outputs.EXTRA_TAG }}
             echo "Namespace and pullsecret created"
           else
-            kubectl delete secret ghcr-io -n ${{ needs.setup.outputs.CALLER_REPO_NAME }} --context apifornia-${{ needs.setup.outputs.EXTRA_TAG }}
-            kubectl create secret docker-registry ghcr-io --docker-server="ghcr.io" --docker-username="github" --docker-password="${{ secrets.gh_token }}" -n ${{ needs.setup.outputs.CALLER_REPO_NAME }} --context apifornia-${{ needs.setup.outputs.EXTRA_TAG }}
+            kubectl delete secret ghcr-io -n ${{ needs.setup.outputs.NAMESPACE }} --context apifornia-${{ needs.setup.outputs.EXTRA_TAG }}
+            kubectl create secret docker-registry ghcr-io --docker-server="ghcr.io" --docker-username="github" --docker-password="${{ secrets.gh_token }}" -n ${{ needs.setup.outputs.NAMESPACE }} --context apifornia-${{ needs.setup.outputs.EXTRA_TAG }}
             echo "Secret re-created"
           fi
 
@@ -149,11 +149,11 @@ jobs:
       - name: Helm install
         run: |
           export HELM_KUBECONTEXT=apifornia-${{ needs.setup.outputs.EXTRA_TAG }}
-          helm upgrade "${{ needs.setup.outputs.CALLER_REPO_NAME }}" ${{ inputs.helm_path }} \
+          helm upgrade "${{ needs.setup.outputs.APP_NAME }}" ${{ inputs.helm_path }} \
           -f ${{ inputs.helm_path }}/values-${{ needs.setup.outputs.EXTRA_TAG }}.yml \
           --install \
           --atomic \
-          --namespace "${{ needs.setup.outputs.CALLER_REPO_NAME }}" \
+          --namespace "${{ needs.setup.outputs.NAMESPACE }}" \
           --set image="${{ needs.build.outputs.TAGS }}" \
           --set git_commit="${GITHUB_SHA}"
 
