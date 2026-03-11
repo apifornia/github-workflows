@@ -58,7 +58,8 @@ jobs:
         with:
           APP_NAME: ${{ inputs.APP_NAME }}
           NAMESPACE: ${{ inputs.NAMESPACE }}
-  
+
+  # BUILD
   build:
     runs-on: apifornia-builder
     if: "${{ inputs.do_build == true }}"
@@ -85,7 +86,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: ghcr.io/${{ needs.setup.outputs.APP_NAME }}
           tags: |
             type=raw,value=${{ github.sha }}
 
@@ -93,7 +94,7 @@ jobs:
         id: meta2
         uses: docker/metadata-action@v4
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: ghcr.io/${{ needs.setup.outputs.APP_NAME }}
           tags: |
             type=raw,value=${{ needs.setup.outputs.EXTRA_TAG }}
 
@@ -116,6 +117,7 @@ jobs:
           tags: ${{ steps.meta2.outputs.tags }}
           labels: |
             project=apifornia
+  # DEPLOY
   deploy-k8s:
     needs: [setup,build]
     runs-on: apifornia-builder
@@ -156,7 +158,7 @@ jobs:
           --namespace "${{ needs.setup.outputs.NAMESPACE }}" \
           --set image="${{ needs.build.outputs.TAGS }}" \
           --set git_commit="${GITHUB_SHA}"
-
+  # CLEANUP
   cleanup:
     runs-on: apifornia-builder
     needs: [setup,build,deploy-k8s]
