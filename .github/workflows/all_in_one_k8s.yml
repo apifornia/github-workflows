@@ -158,6 +158,7 @@ jobs:
           --namespace "${{ needs.setup.outputs.NAMESPACE }}" \
           --set image="${{ needs.build.outputs.TAGS }}" \
           --set git_commit="${GITHUB_SHA}"
+
   # CLEANUP
   cleanup:
     runs-on: apifornia-builder
@@ -167,3 +168,15 @@ jobs:
         run: |
           docker image rm -f ${{ needs.build.outputs.TAGS }} || true
           docker image rm -f ${{ needs.setup.outputs.EXTRA_TAG }} || true
+
+  # CLEAR CLOUDFLARE CACHE
+  # clear-cf-cache:
+  #   runs-on: apifornia-builder
+  #   needs: [setup,build,deploy-k8s]
+  #   steps:
+  #     - id: cache-cleanup
+  #       uses: apifornia/github-actions/cloudflare-cache@main
+  #       with:
+  #         zone_id: ${{ secrets.CF_ZONEID }}
+  #         token: ${{ secrets.CF_TOKEN }}
+  #         hosts: ''
