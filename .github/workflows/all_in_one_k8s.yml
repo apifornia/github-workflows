@@ -33,6 +33,10 @@ on:
         type: boolean
         default: true
         required: false
+      cf_domains:
+        type: string
+        default: ''
+        required: false        
 
     secrets:
       build_vars:
