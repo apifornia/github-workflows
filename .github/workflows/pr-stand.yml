@@ -143,7 +143,10 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
 
       # ---- deploy (both paths use the same PR_ID tag) ----
-      - name: Clone apifornia/flow-editor-vue3 chart
+      # For frontend PRs the repo was already cloned from head_ref above, so
+      # we reuse that clone. For non-frontend PRs we clone the chart from develop.
+      - name: Clone apifornia/flow-editor-vue3 chart (non-frontend PRs)
+        if: needs.setup.outputs.CALLER_REPO_NAME != 'flow-editor-vue3'
         uses: actions/checkout@v4
         with:
           repository: apifornia/flow-editor-vue3
@@ -153,13 +156,21 @@ jobs:
       - name: Get env file for deploy
         run: |
           echo  "${{ secrets.gh_token }}" | gh auth login --with-token
-          gh variable get PR --repo apifornia/flow-editor-vue3 > .github/flow-editor-vue3_chart_${{ needs.setup.outputs.PR_ID }}/.env
-          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' .github/flow-editor-vue3_chart_${{ needs.setup.outputs.PR_ID }}/.env
-          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' .github/flow-editor-vue3_chart_${{ needs.setup.outputs.PR_ID }}/deploy/chart/values-pr.yml
+          CHART_PATH=.github/flow-editor-vue3_chart_${{ needs.setup.outputs.PR_ID }}
+          if [ "${{ needs.setup.outputs.CALLER_REPO_NAME }}" == "flow-editor-vue3" ]; then
+            CHART_PATH=.github/flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}
+          fi
+          gh variable get PR --repo apifornia/flow-editor-vue3 > ${CHART_PATH}/.env
+          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' ${CHART_PATH}/.env
+          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' ${CHART_PATH}/deploy/chart/values-pr.yml
       - name: Deploy flow-editor-vue3
         run: |
           export HELM_KUBECONTEXT=apifornia-dev
-          cd .github/flow-editor-vue3_chart_${{ needs.setup.outputs.PR_ID }}
+          CHART_PATH=.github/flow-editor-vue3_chart_${{ needs.setup.outputs.PR_ID }}
+          if [ "${{ needs.setup.outputs.CALLER_REPO_NAME }}" == "flow-editor-vue3" ]; then
+            CHART_PATH=.github/flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}
+          fi
+          cd ${CHART_PATH}
           helm install "flow-editor-vue3" ./deploy/chart \
           -f ./deploy/chart/values-pr.yml \
           --namespace "${{ needs.setup.outputs.PR_ID }}" \
