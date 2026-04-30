@@ -69,6 +69,10 @@ jobs:
     if: "${{ inputs.do_build == true }}"
     outputs:
       TAGS: ${{ steps.meta.outputs.tags }}
+      # SHA_TAG is the immutable per-commit tag used by deploy-k8s for
+      # --set image=. Callers that previously consumed TAGS for a single
+      # tag can switch to SHA_TAG; TAGS still carries both tags for cleanup.
+      SHA_TAG: ${{ steps.sha-tag.outputs.tag }}
     needs: setup
     steps:
       - name: Checkout
@@ -86,23 +90,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Get Docker metadata - SHA tag
+      - name: Get Docker metadata
         id: meta
         uses: docker/metadata-action@v4
         with:
           images: ghcr.io/apifornia/${{ needs.setup.outputs.APP_NAME }}
+          # Publish both the immutable SHA tag (consumed by pr-stand.yml as
+          # PR_REPO_IMAGE) and the mutable ENV tag (e.g. "dev") in a single
+          # build — previously two independent docker/build-push-action runs
+          # doubled the build wall-clock time for every service-affecting PR.
           tags: |
             type=raw,value=${{ github.sha }}
-
-      - name: Get Docker metadata - ENV tag
-        id: meta2
-        uses: docker/metadata-action@v4
-        with:
-          images: ghcr.io/apifornia/${{ needs.setup.outputs.APP_NAME }}
-          tags: |
             type=raw,value=${{ needs.setup.outputs.EXTRA_TAG }}
 
-      - name: Build and push - SHA tag
+      - name: Build and push
         uses: docker/build-push-action@v4
         with:
           context: .
@@ -112,15 +113,11 @@ jobs:
           labels: |
             project=apifornia
 
-      - name: Build and push - ENV tag
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          file: ${{ inputs.docker_file }}
-          push: ${{ inputs.do_build_push }}
-          tags: ${{ steps.meta2.outputs.tags }}
-          labels: |
-            project=apifornia
+      - name: Extract SHA tag
+        id: sha-tag
+        run: |
+          SHA_TAG=$(echo "${{ steps.meta.outputs.tags }}" | grep "${{ github.sha }}" | head -1)
+          echo "tag=${SHA_TAG}" >> $GITHUB_OUTPUT
   # DEPLOY
   deploy-k8s:
     needs: [setup,build]
@@ -160,7 +157,7 @@ jobs:
           --install \
           --atomic \
           --namespace "${{ needs.setup.outputs.NAMESPACE }}" \
-          --set image="${{ needs.build.outputs.TAGS }}" \
+          --set image="${{ needs.build.outputs.SHA_TAG }}" \
           --set git_commit="${GITHUB_SHA}"
 
   # CLEANUP

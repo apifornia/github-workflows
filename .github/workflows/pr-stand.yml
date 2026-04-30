@@ -83,70 +83,87 @@ jobs:
   # =========================
   # FRONTEND build and deploy
   # =========================
+  # For flow-editor-vue3 PRs the frontend is rebuilt from the PR branch so
+  # changes are exercised in the stand. For every other caller the published
+  # ghcr.io/apifornia/flow-editor-vue3:develop image is pulled, retagged
+  # with the PR namespace tag, and deployed — skipping the ~1-minute build.
   frontend-up:
     needs: [setup,infra]
     runs-on: apifornia-builder
-    #if: "${{ needs.setup.outputs.CALLER_REPO_NAME != 'flow-editor-vue3' }}"
-    outputs:
-      IMAGE_ID: ${{ steps.front-build.outputs.imageid }}
     steps:
-      - id: setup
-        name: Setup
-        run: >
-          if [ ${{ needs.setup.outputs.CALLER_REPO_NAME }} == 'flow-editor-vue3' ]; then
-            echo "BRANCH=${GITHUB_HEAD_REF}"
-            echo "BRANCH=${GITHUB_HEAD_REF}" >> $GITHUB_OUTPUT
-          else
-            echo "BRANCH=develop"
-            echo "BRANCH=develop" >> $GITHUB_OUTPUT
-          fi
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.gh_token }}
-      - name: Get Docker metadata
+
+      # ---- non-frontend callers: retag published develop image ----
+      - name: Pull and retag develop image (non-frontend PRs)
+        if: needs.setup.outputs.CALLER_REPO_NAME != 'flow-editor-vue3'
+        run: |
+          docker pull ghcr.io/apifornia/flow-editor-vue3:develop
+          docker tag  ghcr.io/apifornia/flow-editor-vue3:develop \
+                      ghcr.io/apifornia/flow-editor-vue3:${{ needs.setup.outputs.PR_ID }}
+          docker push ghcr.io/apifornia/flow-editor-vue3:${{ needs.setup.outputs.PR_ID }}
+
+      # ---- frontend callers: full build from PR branch ----
+      - name: Get Docker metadata (frontend PR)
         id: meta
+        if: needs.setup.outputs.CALLER_REPO_NAME == 'flow-editor-vue3'
         uses: docker/metadata-action@v4
         with:
           images: ghcr.io/apifornia/flow-editor-vue3
           tags: |
             type=raw,value=${{ needs.setup.outputs.PR_ID }}
-      - name: Clone apifornia/flow-editor-vue3
+      - name: Clone apifornia/flow-editor-vue3 (frontend PR)
+        if: needs.setup.outputs.CALLER_REPO_NAME == 'flow-editor-vue3'
         uses: actions/checkout@v4
         with:
           repository: apifornia/flow-editor-vue3
-          ref: ${{ steps.setup.outputs.BRANCH }}
-          #ref: pr
+          ref: ${{ github.head_ref }}
           path: .github/flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}
           token: ${{ secrets.gh_token }}
-      - name: Get env file
+      - name: Get env file (frontend PR)
+        if: needs.setup.outputs.CALLER_REPO_NAME == 'flow-editor-vue3'
         run: |
           echo Get env vars:
           echo  "${{ secrets.gh_token }}" | gh auth login --with-token
           gh variable get PR --repo apifornia/flow-editor-vue3 > .github/flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env
-          
-          # echo Setting unique id
+
           sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' .github/flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env
           sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' .github/flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/deploy/chart/values-pr.yml
-      - id: front-build-push
-        name: Build
+      - name: Build and push (frontend PR)
+        if: needs.setup.outputs.CALLER_REPO_NAME == 'flow-editor-vue3'
         uses: docker/build-push-action@v4
         with:
           context: .github/flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}
           file: .github/flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/deploy/docker/images/dev/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
-          #secret-files: flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}/.env
-      - name: Update and run ${{ matrix.app }}
+
+      # ---- deploy (both paths use the same PR_ID tag) ----
+      - name: Clone apifornia/flow-editor-vue3 chart
+        uses: actions/checkout@v4
+        with:
+          repository: apifornia/flow-editor-vue3
+          ref: develop
+          path: .github/flow-editor-vue3_chart_${{ needs.setup.outputs.PR_ID }}
+          token: ${{ secrets.gh_token }}
+      - name: Get env file for deploy
+        run: |
+          echo  "${{ secrets.gh_token }}" | gh auth login --with-token
+          gh variable get PR --repo apifornia/flow-editor-vue3 > .github/flow-editor-vue3_chart_${{ needs.setup.outputs.PR_ID }}/.env
+          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' .github/flow-editor-vue3_chart_${{ needs.setup.outputs.PR_ID }}/.env
+          sed -i 's/<pr-id>/${{ needs.setup.outputs.PR_ID }}/' .github/flow-editor-vue3_chart_${{ needs.setup.outputs.PR_ID }}/deploy/chart/values-pr.yml
+      - name: Deploy flow-editor-vue3
         run: |
           export HELM_KUBECONTEXT=apifornia-dev
-          cd .github/flow-editor-vue3_${{ needs.setup.outputs.PR_ID }}
+          cd .github/flow-editor-vue3_chart_${{ needs.setup.outputs.PR_ID }}
           helm install "flow-editor-vue3" ./deploy/chart \
           -f ./deploy/chart/values-pr.yml \
           --namespace "${{ needs.setup.outputs.PR_ID }}" \
-          --set image="${{ steps.meta.outputs.tags }}"
+          --set image="ghcr.io/apifornia/flow-editor-vue3:${{ needs.setup.outputs.PR_ID }}"
 
   # ===============
   # APPS deployment
