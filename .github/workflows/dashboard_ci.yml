@@ -12,10 +12,8 @@ jobs:
           python-version: "3.12"
       - name: Run tests
         run: |
-          pytest -m unit
           # with verbose output
           pytest -m unit -v
           # with coverage report
           pytest -m unit --cov=dashboard --cov-report=term-missing
-          # for a specific module
-          pytest tests/unit/core/test_logger.py
+
