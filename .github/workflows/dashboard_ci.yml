@@ -1,0 +1,21 @@
+on:
+  workflow_call:
+
+jobs:
+  tests:
+    name: tests
+    runs-on: apifornia-builder
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+      - name: Run tests
+        run: |
+          pytest -m unit
+          # with verbose output
+          pytest -m unit -v
+          # with coverage report
+          pytest -m unit --cov=dashboard --cov-report=term-missing
+          # for a specific module
+          pytest tests/unit/core/test_logger.py
