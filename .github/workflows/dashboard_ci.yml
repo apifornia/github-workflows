@@ -12,8 +12,9 @@ jobs:
           python-version: "3.12"
       - name: Run tests
         run: |
-          uv sync
           pip install pytest
+          pip install uv
+          uv sync
           # with verbose output
           pytest -m unit -v
           # with coverage report
