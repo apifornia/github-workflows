@@ -12,11 +12,10 @@ jobs:
           python-version: "3.12"
       - name: Run tests
         run: |
-          pip install pytest
           pip install uv
-          uv sync
+          uv sync --group api --group interface --group dev
           # with verbose output
-          pytest -m unit -v
+          uv run pytest -m unit -v
           # with coverage report
-          pytest -m unit --cov=dashboard --cov-report=term-missing
+          uv run pytest -m unit --cov=dashboard --cov-report=term-missing
 
