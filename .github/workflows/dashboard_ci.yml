@@ -13,7 +13,7 @@ jobs:
       - name: Run tests
         run: |
           pip install uv
-          uv sync --group api --group interface --group dev
+          uv sync --group api --group interface --group dev --group worker
           # with verbose output
           uv run pytest -m unit -v
           # with coverage report
