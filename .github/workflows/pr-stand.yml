@@ -60,6 +60,7 @@ jobs:
           - kafka
           - mongodb
           - redis
+          - rustfs
     steps:
       - name: Clone infra
         uses: actions/checkout@v4
