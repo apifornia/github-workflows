@@ -3,7 +3,7 @@ on:
     inputs:
       test_command:
         type: string
-        default: 'npm install && npm run test'
+        default: 'npm ci && npm run test'
         required: false
       node_version:
         type: string
