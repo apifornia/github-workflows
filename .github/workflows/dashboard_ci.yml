@@ -2,20 +2,31 @@ on:
   workflow_call:
 
 jobs:
-  tests:
-    name: tests
+  checks:
+    name: ${{ matrix.name }}
     runs-on: apifornia-builder
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linters
+            run: uv run pre-commit run --all-files
+          - name: dead-fixtures
+            run: uv run pre-commit run dead-fixtures --all-files --hook-stage manual
+          - name: tests
+            run: uv run pytest -m unit -v --cov=dashboard --cov-report=term-missing
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
           python-version: "3.12"
-      - name: Run tests
-        run: |
-          pip install uv
-          uv sync --group api --group interface --group dev --group worker
-          # with verbose output
-          uv run pytest -m unit -v
-          # with coverage report
-          uv run pytest -m unit --cov=dashboard --cov-report=term-missing
-
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: |
+            **/pyproject.toml
+            **/uv.lock
+      - name: Sync dependencies
+        run: uv sync --group api --group interface --group dev --group worker
+      - name: Run ${{ matrix.name }}
+        run: ${{ matrix.run }}
