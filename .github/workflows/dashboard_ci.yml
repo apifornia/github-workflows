@@ -11,6 +11,8 @@ jobs:
         include:
           - name: linters
             run: uv run pre-commit run --all-files
+          - name: vulture
+            run: uv run pre-commit run vulture --all-files --hook-stage manual
           - name: dead-fixtures
             run: uv run pre-commit run dead-fixtures --all-files --hook-stage manual
           - name: tests
