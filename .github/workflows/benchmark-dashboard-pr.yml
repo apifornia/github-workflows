@@ -1,5 +1,17 @@
 on:
   workflow_call:
+    inputs:
+      python-version:
+        type: string
+        default: "3.12"
+      uv-groups:
+        type: string
+        required: true
+        description: "Space-separated uv dependency groups"
+      cov:
+        type: string
+        required: true
+        description: "pytest --cov target"
 
 jobs:
   checks:
@@ -29,6 +41,14 @@ jobs:
             **/pyproject.toml
             **/uv.lock
       - name: Sync dependencies
-        run: uv sync --group api --group interface --group dev --group worker
+        env:
+          UV_GROUPS: ${{ inputs.uv-groups }}
+        run: |
+          set -eu
+          cmd=(uv sync)
+          for g in $UV_GROUPS; do
+            cmd+=(--group "$g")
+          done
+          "${cmd[@]}"
       - name: Run ${{ matrix.name }}
         run: ${{ matrix.run }}
