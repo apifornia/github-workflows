@@ -28,12 +28,12 @@ jobs:
           - name: dead-fixtures
             run: uv run pre-commit run dead-fixtures --all-files --hook-stage manual
           - name: tests
-            run: uv run pytest -m unit -v --cov=dashboard --cov-report=term-missing
+            run: uv run pytest -m unit -v --cov=${{ inputs.cov }} --cov-report=term-missing
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.12"
+          python-version: ${{ inputs.python-version }}
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
